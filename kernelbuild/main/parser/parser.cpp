@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Markus Himmel
 */
 #include "parser.h"
-#include "../src/kernel/expr.h"
 
 #include <iostream>
 #include <fstream>
@@ -192,9 +191,20 @@ void Parser::parse_name() {
     if (error) return;
     auto parent = parse_u64();
     if (error) return;
+    if (parent >= names.size()) {
+        dbgf("Referencing name that doesn't exist.");
+        error = true;
+        return;
+    }
     if (type == name_string) {
         auto comp = parse_string();
         if (error) return;
+        
+        lean::name const &par = names[parent];
+        std::string compstr = comp;
+        
+        lean::name n(par, compstr);
+
         std::cout << "Have a string name: " << comp << std::endl;
     } else if (type == name_int) {
         auto comp = parse_u64();
@@ -519,6 +529,11 @@ void Parser::handle_file(sz::string_view file) {
 
 bool Parser::is_error() {
     return error;
+}
+
+Parser::Parser() : error(false) {
+    levels.push_back(lean::mk_level_zero());
+    names.push_back(lean::name::anonymous());
 }
 
 int main(int argc, char* argv[]) {
