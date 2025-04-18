@@ -6,6 +6,7 @@ Author: Markus Himmel
 */
 #pragma once
 #include <stringzilla/stringzilla.hpp>
+#include "kernel/expr.h"
 #include <vector>
 
 namespace sz = ashvardanian::stringzilla;
@@ -69,6 +70,7 @@ private:
     // Was there ever an error
     bool error;
     
+    std::vector<lean::expr> exprs;
     // TODO: State: names, levels, expressions
     // TODO: environment??
 };

@@ -44,7 +44,7 @@ cc_binary(
     srcs = ["parser/parser.cpp", "parser/parser.h"],
     includes = ["."],
     visibility = ["//:__pkg__"],
-    deps = [":stringzilla"],
+    deps = [":stringzilla", ":kernel"],
 )
 
 cc_binary(

@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Markus Himmel
 */
 #include "parser.h"
+#include "../src/kernel/expr.h"
 
 #include <iostream>
 #include <fstream>
