@@ -203,9 +203,11 @@ void Parser::parse_name() {
         lean::name const &par = names[parent];
         std::string compstr = comp;
         
-        lean::name n(par, compstr);
+        lean::name n(par, lean::string_ref(compstr));
+        
+        names.push_back(n);
 
-        std::cout << "Have a string name: " << comp << std::endl;
+        std::cout << "Have a string name: " << n.to_string() << std::endl;
     } else if (type == name_int) {
         auto comp = parse_u64();
         if (error) return;
