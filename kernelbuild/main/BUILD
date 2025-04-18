@@ -23,6 +23,14 @@ cc_library(
 )
 
 cc_library(
+    name = "stringzilla",
+    srcs = ["stringzilla/c/lib.c"],
+    hdrs = ["stringzilla/include/stringzilla/stringzilla.h", "stringzilla/include/stringzilla/stringzilla.hpp"],
+    includes = ["stringzilla/include"],
+    visibility = ["//:__pkg__"],
+)
+
+cc_library(
     name = "kernel",
     srcs = glob(["src/kernel/**/*.cpp", "src/runtime/**/*.cpp", "src/util/**/*.cpp", "src/library/**/*.cpp", "initialize/init.cpp"]),
     hdrs = glob(["src/kernel/**/*.h", "src/runtime/**/*.h", "src/util/**/*.h", "src/library/**/*.h", "src/include/**/*.h", "initialize/init.h", "stdlib_flags.h"]),
@@ -37,6 +45,7 @@ cc_library(
     hdrs = ["parser/parser.h"],
     includes = ["."],
     visibility = ["//:__pkg__"],
+    deps = [":stringzilla"],
 )
 
 cc_binary(
