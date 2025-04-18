@@ -40,6 +40,7 @@ private:
     template<typename T> std::vector<T> parse_numeric_star();
     template<typename T> std::vector<T> parse_numeric_amount(std::uint64_t n);
     std::uint64_t parse_u64();
+    unsigned int parse_uint();
     std::vector<std::uint64_t> parse_u64_star();
     std::vector<std::uint64_t> parse_u64_amount(std::uint64_t n);
     bool parse_bool();
@@ -48,6 +49,9 @@ private:
     /* Parsing of lean-specific objects */
     lean::name parse_name_idx();
     lean::level parse_level_idx();
+    lean::expr parse_expr_idx();
+    std::vector<lean::level> parse_level_star();
+    std::vector<lean::level> parse_level_amount(std::uint64_t n);
     
     /* Parsing of specific lines */
     void parse_name();

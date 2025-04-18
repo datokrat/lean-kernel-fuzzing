@@ -125,6 +125,10 @@ std::uint64_t Parser::parse_u64() {
     return parse_numeric<std::uint64_t>();
 }
 
+unsigned int Parser::parse_uint() {
+    return parse_numeric<unsigned int>();
+}
+
 std::vector<std::uint64_t> Parser::parse_u64_star() {
     return parse_numeric_star<std::uint64_t>();
 }
@@ -153,6 +157,53 @@ lean::level Parser::parse_level_idx() {
         return lean::mk_level_zero();
     }
     return levels[idx];
+}
+
+std::vector<lean::level> Parser::parse_level_star() {
+    std::vector<lean::level> result;
+    auto val = try_parse_string();
+    while (!val.empty()) {
+        auto num = convert_numeric<std::uint64_t>(val);
+        if (error) {
+            return result;
+        }
+        if (num >= levels.size()) {
+            dbgf("Referenced a level that doesn't exist");
+            error = true;
+            return result;
+        }
+        result.push_back(levels[num]);
+        val = try_parse_string();
+    }
+    return result;
+}
+
+std::vector<lean::level> Parser::parse_level_amount(std::uint64_t n) {
+    std::vector<lean::level> result(n);
+    for (std::uint64_t i = 0; i < n; ++i) {
+        auto num = parse_numeric<std::uint64_t>();
+        if (error) {
+            return result;
+        }
+        if (num >= levels.size()) {
+            dbgf("Referenced a level that doesn't exist");
+            error = true;
+            return result;
+        }
+        result.push_back(levels[num]);
+    }
+    return result;
+}
+
+lean::expr Parser::parse_expr_idx() {
+    auto idx = parse_u64();
+    if (error) return lean::expr();
+    if (idx >= exprs.size()) {
+        dbgf("Referenced an expression that doens't exist");
+        error = true;
+        return lean::expr();
+    }
+    return exprs[idx];
 }
 
 bool Parser::parse_bool() {
@@ -305,73 +356,100 @@ sz::string_view expression_strlit = "#ELS"_sz;
 void Parser::parse_expression() {
     auto index = parse_u64();
     if (error) return;
+    if (index != exprs.size()) {
+        dbgf("Expected a different index");
+        error = true;
+        return;
+    }
     auto type = parse_string();
     if (error) return;
     if (type == expression_variable) {
         auto deBruijnIndex = parse_u64();
         if (error) return;
+        lean::expr e = lean::mk_bvar(lean::nat(deBruijnIndex));
+        exprs.push_back(e);
         std::cout << "Have a variable expression" << std::endl;
     } else if (type == expression_sort) {
-        auto universeIndex = parse_u64();
+        auto universe = parse_level_idx();
         if (error) return;
+        lean::expr e = lean::mk_sort(universe);
+        exprs.push_back(e);
         std::cout << "Have a sort expression" << std::endl;
     } else if (type == expression_constant) {
-        auto nameIndex = parse_u64();
+        auto name = parse_name_idx();
         if (error) return;
-        auto universeIndices = parse_u64_star();
+        auto universes = parse_level_star();
         if (error) return;
+        lean::expr e = lean::mk_const(name, lean::levels(universes.begin(), universes.end()));
+        exprs.push_back(e);
         std::cout << "Have a constant expression" << std::endl;
     } else if (type == expression_application) {
-        auto lhs = parse_u64();
+        auto lhs = parse_expr_idx();
         if (error) return;
-        auto rhs = parse_u64();
+        auto rhs = parse_expr_idx();
         if (error) return;
+        lean::expr e = lean::mk_app(lhs, rhs);
+        exprs.push_back(e);
         std::cout << "Have an application expression" << std::endl;
     } else if (type == expression_lambda) {
-        auto info = parse_string(); // ignored, we don't care
+        parse_string(); // ignored, we don't care
         if (error) return;
-        auto binderName = parse_u64();
+        auto binderName = parse_name_idx();
         if (error) return;
-        auto binderType = parse_u64();
+        auto binderType = parse_expr_idx();
         if (error) return;
-        auto body = parse_u64();
+        auto body = parse_expr_idx();
         if (error) return;
+        lean::expr e = lean::mk_lambda(binderName, binderType, body);
+        exprs.push_back(e);
         std::cout << "Have a lambda expression" << std::endl;
     } else if (type == expression_pi) {
-        auto info = parse_string(); // ignored, we don't care
+        parse_string(); // ignored, we don't care
         if (error) return;
-        auto binderName = parse_u64();
+        auto binderName = parse_name_idx();
         if (error) return;
-        auto binderType = parse_u64();
+        auto binderType = parse_expr_idx();
         if (error) return;
-        auto body = parse_u64();
+        auto body = parse_expr_idx();
         if (error) return;
+        lean::expr e = lean::mk_pi(binderName, binderType, body);
+        exprs.push_back(e);
         std::cout << "Have a pi expression" << std::endl;
     } else if (type == expression_let) {
-        auto binderName = parse_u64();
+        auto binderName = parse_name_idx();
         if (error) return;
-        auto binderType = parse_u64();
+        auto binderType = parse_expr_idx();
         if (error) return;
-        auto boundValue = parse_u64();
+        auto boundValue = parse_expr_idx();
         if (error) return;
-        auto body = parse_u64();
+        auto body = parse_expr_idx();
         if (error) return;
+        lean::expr e = lean::mk_let(binderName, binderType, boundValue, body);
+        exprs.push_back(e);
         std::cout << "Have a let expression" << std::endl;
     } else if (type == expression_projection) {
-        auto typeName = parse_u64();
+        auto typeName = parse_name_idx();
         if (error) return;
-        auto fieldIndex = parse_u64();
+        auto fieldIndex = parse_uint();
         if (error) return;
-        auto value = parse_u64();
+        auto value = parse_expr_idx();
         if (error) return;
+        lean::expr e = lean::mk_proj(typeName, fieldIndex, value);
+        exprs.push_back(e);
         std::cout << "Have a projection expression" << std::endl;
     } else if (type == expression_natlit) {
-        auto value = parse_string(); // TODO: make into a bignum
+        auto value = parse_string();
         if (error) return;
+        std::string s(value.begin(), value.end());
+        lean::mpz num(s.c_str());
+        lean::expr e = lean::mk_lit(lean::literal(num));
+        exprs.push_back(e);
         std::cout << "Have a nat literal" << std::endl;
     } else if (type == expression_strlit) {
         auto value = parse_hexstring();
         if (error) return;
+        lean::expr e = lean::mk_lit(lean::literal(value.c_str()));
+        exprs.push_back(e);
         std::cout << "Have a string literal: " << value << std::endl;
     } else {
         dbgf("Unknown expression type\n");
