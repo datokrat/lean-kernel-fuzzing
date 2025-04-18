@@ -187,12 +187,17 @@ sz::string_view name_int = "#NI"_sz;
 void Parser::parse_name() {
     auto index = parse_u64();
     if (error) return;
+    if (index != names.size()) {
+        dbgf("Expected a different index");
+        error = true;
+        return;
+    }
     auto type = parse_string();
     if (error) return;
     auto parent = parse_u64();
     if (error) return;
     if (parent >= names.size()) {
-        dbgf("Referencing name that doesn't exist.");
+        dbgf("Referencing name that doesn't exist\n");
         error = true;
         return;
     }
@@ -200,18 +205,19 @@ void Parser::parse_name() {
         auto comp = parse_string();
         if (error) return;
         
-        lean::name const &par = names[parent];
         std::string compstr = comp;
-        
-        lean::name n(par, lean::string_ref(compstr));
-        
+        lean::name n(names[parent], lean::string_ref(compstr));
         names.push_back(n);
 
         std::cout << "Have a string name: " << n.to_string() << std::endl;
     } else if (type == name_int) {
         auto comp = parse_u64();
         if (error) return;
-        std::cout << "Have an int name: " << comp << std::endl;
+        
+        lean::name n(names[parent], lean::nat(comp));
+        names.push_back(n);
+
+        std::cout << "Have an int name: " << n.to_string() << std::endl;
     } else {
         dbgf("Unknown name type\n");
         error = true;
@@ -227,20 +233,59 @@ sz::string_view universe_parameter = "#UP"_sz;
 void Parser::parse_level() {
     auto index = parse_u64();
     if (error) return;
+    if (index != levels.size()) {
+        dbgf("Expected a different index");
+        error = true;
+        return;
+    }
     auto type = parse_string();
     if (type == universe_succ) {
         auto parent = parse_u64();
+        if (error) return;
+        if (parent >= levels.size()) {
+            dbgf("Referencing a level that doesn't exist\n");
+            error = true;
+            return;
+        }
+        lean::level l = lean::mk_succ(levels[parent]);
+        levels.push_back(l);
         std::cout << "Have a universe successor" << std::endl;
     } else if (type == universe_max) {
         auto lhs = parse_u64();
+        if (error) return;
         auto rhs = parse_u64();
+        if (error) return;
+        if (lhs >= levels.size() && rhs >= levels.size()) {
+            dbgf("Referencing a level that doesn't exist\n");
+            error = true;
+            return;
+        }
+        lean::level l = lean::mk_max(levels[lhs], levels[rhs]);
+        levels.push_back(l);
         std::cout << "Have a universe max" << std::endl;
     } else if (type == universe_imax) {
         auto lhs = parse_u64();
+        if (error) return;
         auto rhs = parse_u64();
+        if (error) return;
+        if (lhs >= levels.size() && rhs >= levels.size()) {
+            dbgf("Referencing a level that doesn't exist\n");
+            error = true;
+            return;
+        }
+        lean::level l = lean::mk_imax(levels[lhs], levels[rhs]);
+        levels.push_back(l);
         std::cout << "Have a universe imax" << std::endl;
     } else if (type == universe_parameter) {
         auto parameterIndex = parse_u64();
+        if (error) return;
+        if (parameterIndex >= names.size()) {
+            dbgf("Referencing a name that doesn't exist\n");
+            error = true;
+            return;
+        }
+        lean::level l = lean::mk_univ_param(names[parameterIndex]);
+        levels.push_back(l);
         std::cout << "Have a universe parameter" << std::endl;
     } else {
         dbgf("Unknown universe type\n");
