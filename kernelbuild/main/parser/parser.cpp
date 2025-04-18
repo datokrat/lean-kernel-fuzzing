@@ -133,6 +133,28 @@ std::vector<std::uint64_t> Parser::parse_u64_amount(std::uint64_t n) {
     return parse_numeric_amount<std::uint64_t>(n);
 }
 
+lean::name Parser::parse_name_idx() {
+    auto idx = parse_u64();
+    if (error) return lean::name();
+    if (idx >= names.size()) {
+        dbgf("Referenced a name that doesn't exist");
+        error = true;
+        return lean::name();
+    }
+    return names[idx];
+}
+
+lean::level Parser::parse_level_idx() {
+    auto idx = parse_u64();
+    if (error) return lean::mk_level_zero();
+    if (idx >= levels.size()) {
+        dbgf("Referenced a level that doesn't exist");
+        error = true;
+        return lean::mk_level_zero();
+    }
+    return levels[idx];
+}
+
 bool Parser::parse_bool() {
     auto val = parse_u64();
     if (error) return false;
@@ -194,19 +216,14 @@ void Parser::parse_name() {
     }
     auto type = parse_string();
     if (error) return;
-    auto parent = parse_u64();
+    auto parent = parse_name_idx();
     if (error) return;
-    if (parent >= names.size()) {
-        dbgf("Referencing name that doesn't exist\n");
-        error = true;
-        return;
-    }
     if (type == name_string) {
         auto comp = parse_string();
         if (error) return;
         
         std::string compstr = comp;
-        lean::name n(names[parent], lean::string_ref(compstr));
+        lean::name n(parent, lean::string_ref(compstr));
         names.push_back(n);
 
         std::cout << "Have a string name: " << n.to_string() << std::endl;
@@ -214,7 +231,7 @@ void Parser::parse_name() {
         auto comp = parse_u64();
         if (error) return;
         
-        lean::name n(names[parent], lean::nat(comp));
+        lean::name n(parent, lean::nat(comp));
         names.push_back(n);
 
         std::cout << "Have an int name: " << n.to_string() << std::endl;
@@ -240,51 +257,31 @@ void Parser::parse_level() {
     }
     auto type = parse_string();
     if (type == universe_succ) {
-        auto parent = parse_u64();
+        auto parent = parse_level_idx();
         if (error) return;
-        if (parent >= levels.size()) {
-            dbgf("Referencing a level that doesn't exist\n");
-            error = true;
-            return;
-        }
-        lean::level l = lean::mk_succ(levels[parent]);
+        lean::level l = lean::mk_succ(parent);
         levels.push_back(l);
         std::cout << "Have a universe successor" << std::endl;
     } else if (type == universe_max) {
-        auto lhs = parse_u64();
+        auto lhs = parse_level_idx();
         if (error) return;
-        auto rhs = parse_u64();
+        auto rhs = parse_level_idx();
         if (error) return;
-        if (lhs >= levels.size() && rhs >= levels.size()) {
-            dbgf("Referencing a level that doesn't exist\n");
-            error = true;
-            return;
-        }
-        lean::level l = lean::mk_max(levels[lhs], levels[rhs]);
+        lean::level l = lean::mk_max(lhs, rhs);
         levels.push_back(l);
         std::cout << "Have a universe max" << std::endl;
     } else if (type == universe_imax) {
-        auto lhs = parse_u64();
+        auto lhs = parse_level_idx();
         if (error) return;
-        auto rhs = parse_u64();
+        auto rhs = parse_level_idx();
         if (error) return;
-        if (lhs >= levels.size() && rhs >= levels.size()) {
-            dbgf("Referencing a level that doesn't exist\n");
-            error = true;
-            return;
-        }
-        lean::level l = lean::mk_imax(levels[lhs], levels[rhs]);
+        lean::level l = lean::mk_imax(lhs, rhs);
         levels.push_back(l);
         std::cout << "Have a universe imax" << std::endl;
     } else if (type == universe_parameter) {
-        auto parameterIndex = parse_u64();
+        auto parameter = parse_name_idx();
         if (error) return;
-        if (parameterIndex >= names.size()) {
-            dbgf("Referencing a name that doesn't exist\n");
-            error = true;
-            return;
-        }
-        lean::level l = lean::mk_univ_param(names[parameterIndex]);
+        lean::level l = lean::mk_univ_param(parameter);
         levels.push_back(l);
         std::cout << "Have a universe parameter" << std::endl;
     } else {

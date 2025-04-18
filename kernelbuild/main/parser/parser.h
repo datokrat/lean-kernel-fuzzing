@@ -45,6 +45,10 @@ private:
     bool parse_bool();
     Hint parse_hint();
 
+    /* Parsing of lean-specific objects */
+    lean::name parse_name_idx();
+    lean::level parse_level_idx();
+    
     /* Parsing of specific lines */
     void parse_name();
     void parse_level();
