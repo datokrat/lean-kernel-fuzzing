@@ -31,6 +31,14 @@ cc_library(
     visibility = ["//:__pkg__"],
 )
 
+cc_library(
+    name = "parser",
+    srcs = ["parser/parser.cpp"],
+    hdrs = ["parser/parser.h"],
+    includes = ["."],
+    visibility = ["//:__pkg__"],
+)
+
 cc_binary(
     name = "main",
     srcs = ["main.cpp"],
