@@ -415,17 +415,6 @@ object * array_mk_empty() {
     return g_array_empty;
 }
 
-extern "C" object * lean_list_to_array(object *, object *);
-extern "C" object * lean_array_to_list_impl(object *, object *);
-
-extern "C" LEAN_EXPORT object * lean_array_mk(lean_obj_arg lst) {
-    return lean_list_to_array(lean_box(0), lst);
-}
-
-extern "C" LEAN_EXPORT lean_object * lean_array_to_list(lean_obj_arg a) {
-    return lean_array_to_list_impl(lean_box(0), a);
-}
-
 extern "C" LEAN_EXPORT lean_obj_res lean_array_get_panic(lean_obj_arg def_val) {
     return lean_panic_fn(def_val, lean_mk_ascii_string_unchecked("Error: index out of bounds"));
 }
@@ -2577,9 +2566,10 @@ extern "C" LEAN_EXPORT object * lean_max_small_nat(object *) {
 
 extern "C" obj_res lean_io_eprintln(obj_arg s, obj_arg w);
 void io_eprintln(obj_arg s) {
-    object * r = lean_io_eprintln(s, lean_io_mk_world());
+    // object * r = lean_io_eprintln(s, lean_io_mk_world());
+    // Todo: should we print something here?
     lean_assert(lean_io_result_is_ok(r));
-    lean_dec(r);
+    // lean_dec(r);
 }
 
 extern "C" LEAN_EXPORT object * lean_dbg_trace(obj_arg s, obj_arg fn) {
