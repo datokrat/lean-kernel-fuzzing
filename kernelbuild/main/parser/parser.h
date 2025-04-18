@@ -10,9 +10,18 @@ Author: Markus Himmel
 
 namespace sz = ashvardanian::stringzilla;
 
+enum HintType {
+    O, A, R
+};
+
+struct Hint {
+    HintType type;
+    std::uint64_t value;
+};
+
 class Parser {
 public:
-    Parser() : error(false), line() { }
+    Parser() : error(false), line(), full_line() { }
     
     void handle_file(sz::string_view file);
 
@@ -27,8 +36,12 @@ private:
     template<typename T> T convert_numeric(sz::string_view val);
     template<typename T> T parse_numeric();
     template<typename T> std::vector<T> parse_numeric_star();
+    template<typename T> std::vector<T> parse_numeric_amount(std::uint64_t n);
     std::uint64_t parse_u64();
     std::vector<std::uint64_t> parse_u64_star();
+    std::vector<std::uint64_t> parse_u64_amount(std::uint64_t n);
+    bool parse_bool();
+    Hint parse_hint();
 
     /* Parsing of specific lines */
     void parse_name();
@@ -51,6 +64,7 @@ private:
     
     // Current line
     sz::string_view line;
+    sz::string_view full_line;
     
     // Was there ever an error
     bool error;

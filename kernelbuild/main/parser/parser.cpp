@@ -11,6 +11,8 @@ Author: Markus Himmel
 #include <sstream>
 #include <charconv>
 
+#define MARKUS_DEBUG
+
 #ifdef MARKUS_DEBUG
     #define dbgf printf
 #else
@@ -21,18 +23,27 @@ namespace sz = ashvardanian::stringzilla;
 using sz::literals::operator""_sz;
 
 sz::string_view Parser::try_parse_string() {
-    auto [val, _, rest] = line.partition(" ");
-    line = rest;
-    return val;
+    line = line.lstrip(sz::whitespaces_set());
+    if (line.empty()) {
+        return line;
+    } else {
+        auto [val, _, rest] = line.partition(" ");
+        line = rest;
+        return val;
+    }
 }
 
 sz::string_view Parser::parse_string() {
-    auto val = try_parse_string();
-    if (val.empty()) {
+    line = line.lstrip(sz::whitespaces_set());
+    if (line.empty()) {
         dbgf("Nothing to read\n");
         error = true;
+        return line;
+    } else {
+        auto [val, _, rest] = line.partition(" ");
+        line = rest;
+        return val;
     }
-    return val;
 }
 
 char Parser::convert_hexchar(sz::string_view val) {
@@ -97,12 +108,77 @@ std::vector<T> Parser::parse_numeric_star() {
     return result;
 }
 
+template <typename T>
+std::vector<T> Parser::parse_numeric_amount(std::uint64_t n) {
+    std::vector<T> result(n);
+    for (std::uint64_t i = 0; i < n; ++i) {
+        auto num = parse_numeric<T>();
+        if (error) {
+            return result;
+        }
+        result.push_back(num);
+    }
+    return result;
+}
+
 std::uint64_t Parser::parse_u64() {
     return parse_numeric<std::uint64_t>();
 }
 
 std::vector<std::uint64_t> Parser::parse_u64_star() {
     return parse_numeric_star<std::uint64_t>();
+}
+
+std::vector<std::uint64_t> Parser::parse_u64_amount(std::uint64_t n) {
+    return parse_numeric_amount<std::uint64_t>(n);
+}
+
+bool Parser::parse_bool() {
+    auto val = parse_u64();
+    if (error) return false;
+    if (val == 0) {
+        return false;
+    } else if (val == 1) {
+        return true;
+    } else {
+        dbgf("Not a valid bool\n");
+        error = true;
+        return false;
+    }
+}
+
+sz::string_view hint_o = "O"_sz;
+sz::string_view hint_a = "A"_sz;
+sz::string_view hint_r = "R"_sz;
+
+Hint hintO () {
+    return { O, 0 };
+}
+
+Hint hintA () {
+    return { A, 0 };
+}
+
+Hint hintR(uint64_t val) {
+    return { R, val };
+}
+
+Hint Parser::parse_hint() {
+    auto type = parse_string();
+    if (error) return hintO();
+    if (type == hint_o) {
+        return hintO();
+    } else if (type == hint_a) {
+        return hintA();
+    } else if (type == hint_r) {
+        auto val = parse_u64();
+        if (error) return hintO();
+        return hintR(val);
+    } else {
+        dbgf("Unknown hint type\n");
+        error = true;
+        return hintO();
+    }
 }
 
 sz::string_view name_string = "#NS"_sz;
@@ -257,39 +333,105 @@ void Parser::parse_recrule() {
 void Parser::parse_axiom() {
     auto name = parse_u64();
     if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
     
-    std::cout << "Have a axiom: " << line << std::endl;
-    line.remove_prefix(line.length());
+    std::cout << "Have an axiom" << std::endl;
 }
 
 void Parser::parse_quotient() {
-    std::cout << "Have a quotient: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+    std::cout << "Have a quotient" << std::endl;
 }
 
 void Parser::parse_definition() {
-    std::cout << "Have a definition: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto value = parse_u64();
+    if (error) return;
+    auto hint = parse_hint();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+    std::cout << "Have a definition" << std::endl;
 }
 
 void Parser::parse_theorem() {
-    std::cout << "Have a theorem: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto value = parse_u64();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+    std::cout << "Have a theorem" << std::endl;
 }
 
 void Parser::parse_opaque() {
-    std::cout << "Have a opaque: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto value = parse_u64();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+    std::cout << "Have a opaque" << std::endl;
 }
 
 void Parser::parse_inductive() {
-    std::cout << "Have a inductive: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto isRecursive = parse_bool();
+    if (error) return;
+    auto isNested = parse_bool();
+    if (error) return;
+    auto numParams = parse_u64();
+    if (error) return;
+    auto numIndices = parse_u64();
+    if (error) return;
+    auto numInductives = parse_u64();
+    if (error) return;
+    auto inductiveNames = parse_u64_amount(numInductives);
+    if (error) return;
+    auto numConstructors = parse_u64();
+    if (error) return;
+    auto constructorNames = parse_u64_amount(numConstructors);
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+
+    std::cout << "Have a inductive" << std::endl;
 }
 
 void Parser::parse_constructor() {
-    std::cout << "Have a constructor: " << line << std::endl;
-    line.remove_prefix(line.length());
+    auto name = parse_u64();
+    if (error) return;
+    auto type = parse_u64();
+    if (error) return;
+    auto parentInductive = parse_u64();
+    if (error) return;
+    auto constructorIndex = parse_u64();
+    if (error) return;
+    auto numParams = parse_u64();
+    if (error) return;
+    auto numFields = parse_u64();
+    if (error) return;
+    auto universeParameters = parse_u64_star();
+    if (error) return;
+    std::cout << "Have a constructor"  << std::endl;
 }
 
 void Parser::parse_recursor() {
@@ -348,6 +490,7 @@ void Parser::parse_line() {
     
     if (!line.empty()) {
         dbgf("Not fully consumed\n");
+        std::cout << full_line << std::endl;
         error = true;
     }
 }
@@ -364,6 +507,7 @@ void Parser::handle_file(sz::string_view file) {
     for (auto l : file.split("\n")) {
         if (!l.empty()) {
             line = l;
+            full_line = l;
             parse_line();       
         }
         if (error) {
