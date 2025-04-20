@@ -3,6 +3,9 @@ open Lean
 
 def semver := "markus-0.0.5"
 
+/-
+Example usage: lake exe lean4export Corpus.ExtendedPrelude
+-/
 def main (args : List String) : IO Unit := do
   initSearchPath (← findSysroot)
   let (imports, constants) := args.span (· != "--")
