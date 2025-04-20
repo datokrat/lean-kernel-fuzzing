@@ -11,13 +11,13 @@ Author: Markus Himmel
 #include <fstream>
 #include <sstream>
 
-extern void lean_initialize_runtime_module();
-extern void lean_initialize();
-extern void lean_io_mark_end_initialization();
-extern lean_object * initialize_Lean_Environment(uint8_t builtin, lean_object *);
+extern "C" void lean_initialize_runtime_module();
+extern "C" void lean_initialize();
+extern "C" void lean_io_mark_end_initialization();
+extern "C" lean_object * initialize_Lean_Environment(uint8_t builtin, lean_object *);
 
-extern lean_object* lean_mk_empty_environment(uint32_t trust_level, lean_object* /* world */);
-extern lean_object* lean_elab_environment_to_kernel_env(lean_object* x_1);
+extern "C" lean_object* lean_mk_empty_environment(uint32_t trust_level, lean_object* /* world */);
+extern "C" lean_object* lean_elab_environment_to_kernel_env(lean_object* x_1);
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
