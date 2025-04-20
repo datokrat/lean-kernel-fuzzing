@@ -21,6 +21,7 @@ name_generator::name_generator(name const & prefix):m_prefix(prefix), m_next_idx
 name_generator::name_generator():name_generator(*g_tmp_prefix) {}
 
 name name_generator::next() {
+    std::cout << "entered name_generator::next" << std::endl;
     if (m_next_idx == std::numeric_limits<unsigned>::max()) {
         // avoid overflow
         m_prefix   = name(m_prefix, m_next_idx);
@@ -28,6 +29,7 @@ name name_generator::next() {
     }
     name r(m_prefix, m_next_idx);
     m_next_idx++;
+    std::cout << "leaving name_generator::next" << std::endl;
     return r;
 }
 

@@ -596,7 +596,7 @@ void Parser::parse_constructor() {
     if (error) return;
 
     lean::constructor c = lean::pair_ref(name, type);
-    constructors.insert( { name, c });
+    constructors.insert({ name, c });
 }
 
 lean::declaration mk_quot() {

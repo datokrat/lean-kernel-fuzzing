@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
     // use same default as for Lean executables
     uint8_t builtin = 1;
     lean_initialize();
+    lean_init_task_manager();
     lean_io_mark_end_initialization();
     
     std::ifstream stream(argv[1]);
@@ -55,13 +56,15 @@ int main(int argc, char* argv[]) {
     std::cout << "a" << std::endl;
     lean::elab_environment elab_env(eenv, true);
     std::cout << "b" << std::endl;
-    lean::environment environment = elab_env.to_kernel_env();
-    std::cout << "c" << std::endl;
+    // lean::environment environment = elab_env.to_kernel_env();
+    // std::cout << "c" << std::endl;
     
     for (const lean::declaration & d : p.get_decls()) {
-        std::printf("Trying to add a declaration\n");
-        environment = environment.add(d);
+        std::printf("Trying to add a declaration, it is an an inductive: %lld\n", (uint64_t)d.is_inductive());
+        elab_env = elab_env.add(d);
     }
+    
+    std::cout << "Successfully checked prelude" << std::endl;
 
     return 0;
 }

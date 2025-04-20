@@ -57,14 +57,20 @@ bool local_ctx::empty() const {
 }
 
 local_decl local_ctx::mk_local_decl(name const & n, name const & un, expr const & type, expr const & value) {
+    std::cout << "mk_local_decl a1" << std ::endl;
     unsigned idx = unbox(lean_local_ctx_num_indices(to_obj_arg()));
+    std::cout << "mk_local_decl a2" << std ::endl;
     m_obj = lean_local_ctx_mk_let_decl(raw(), n.to_obj_arg(), un.to_obj_arg(), type.to_obj_arg(), value.to_obj_arg(), false);
+    std::cout << "mk_local_decl a3" << std ::endl;
     return local_decl(idx, n, un, type, value);
 }
 
 local_decl local_ctx::mk_local_decl(name const & n, name const & un, expr const & type, binder_info bi) {
+    std::cout << "mk_local_decl b1" << std ::endl;
     unsigned idx = unbox(lean_local_ctx_num_indices(to_obj_arg()));
+    std::cout << "mk_local_decl b2" << std ::endl;
     m_obj = lean_local_ctx_mk_local_decl(raw(), n.to_obj_arg(), un.to_obj_arg(), type.to_obj_arg(), static_cast<uint8>(bi));
+    std::cout << "mk_local_decl b3" << std ::endl;
     return local_decl(idx, n, un, type, bi);
 }
 

@@ -142,7 +142,11 @@ extern "C" object * lean_expr_mk_app(obj_arg f, obj_arg a);
 expr mk_app(expr const & f, expr const & a) { return expr(lean_expr_mk_app(f.to_obj_arg(), a.to_obj_arg())); }
 
 extern "C" object * lean_expr_mk_sort(obj_arg l);
-expr mk_sort(level const & l) { return expr(lean_expr_mk_sort(l.to_obj_arg())); }
+expr mk_sort(level const & l) {
+    std::cout << "mk_sort" << std::endl;
+        expr res = expr(lean_expr_mk_sort(l.to_obj_arg()));
+    std::cout << "mk_sort done" << std::endl;
+    return res; }
 
 extern "C" object * lean_expr_mk_lambda(obj_arg n, obj_arg t, obj_arg e, uint8 bi);
 expr mk_lambda(name const & n, expr const & t, expr const & e, binder_info bi) {

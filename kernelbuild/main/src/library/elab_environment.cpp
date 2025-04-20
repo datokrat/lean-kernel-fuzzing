@@ -21,7 +21,9 @@ namespace lean {
 extern "C" obj_res lean_elab_environment_update_base_after_kernel_add(obj_arg env, obj_arg kenv, obj_arg decl);
 
 elab_environment elab_environment::add(declaration const & d, bool check) const {
+    std::cout << "elab_environment::add a" << std::endl;
     environment kenv = to_kernel_env().add(d, check);
+    std::cout << "elab_environment::add b" << std::endl;
     return elab_environment(lean_elab_environment_update_base_after_kernel_add(this->to_obj_arg(), kenv.to_obj_arg(), d.to_obj_arg()));
 }
 
