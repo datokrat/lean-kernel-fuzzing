@@ -27,11 +27,13 @@ struct PreInductive {
 
 class Parser {
 public:
-    Parser();
+    Parser(bool preludeMode);
     
     void handle_file(sz::string_view file);
 
     bool is_error() const;
+
+    const std::vector<lean::declaration> & get_decls() const;
 
 private:
     /* Basic parsing functions */
@@ -73,6 +75,7 @@ private:
     void parse_inductive();
     void parse_inductive_family();
     void parse_constructor();
+    void parse_quotient();
     
     /* Parsing the current line */
     void parse_line();
@@ -86,6 +89,8 @@ private:
     
     // Was there ever an error
     bool error;
+    // Are we in "prelude mode", where axioms are accepted?
+    bool prelude;
     
     std::vector<lean::expr> exprs;
     std::vector<lean::name> names;

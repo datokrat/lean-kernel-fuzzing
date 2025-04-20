@@ -6,9 +6,6 @@ Author: Markus Himmel
 */
 #include "parser.h"
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <charconv>
 
 #define MARKUS_DEBUG
@@ -452,6 +449,11 @@ void Parser::parse_expression() {
 }
 
 void Parser::parse_axiom() {
+    if (!prelude) {
+        dbgf("Not accepting axioms");
+        error = true;
+        return;
+    }
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -459,7 +461,6 @@ void Parser::parse_axiom() {
     auto universeParameters = parse_name_star();
     if (error) return;
     
-    // TODO: ignore axioms in "unsafe mode"
     lean::declaration d = lean::mk_axiom(name, universeParameters, type);
     decls.push_back(d);
 }
@@ -585,6 +586,15 @@ void Parser::parse_constructor() {
     constructors.insert( { name, c });
 }
 
+lean::declaration mk_quot() {
+    return lean::declaration(lean_box(4));
+}
+
+void Parser::parse_quotient() {
+    lean::declaration d = mk_quot();
+    decls.push_back(d);
+}
+
 sz::string_view name_prefix = "#NAME"_sz;
 sz::string_view level_prefix = "#LVL"_sz;
 sz::string_view expression_prefix = "#EXPR"_sz;
@@ -595,6 +605,7 @@ sz::string_view opaque_prefix = "#OPAQ"_sz;
 sz::string_view inductive_prefix = "#IND"_sz;
 sz::string_view inductive_family_prefix = "#INDF"_sz;
 sz::string_view constructor_prefix = "#CTOR"_sz;
+sz::string_view quotient_prefix = "#QUOT"_sz;
 
 void Parser::parse_line() {
     auto command = parse_string();
@@ -619,6 +630,8 @@ void Parser::parse_line() {
         parse_inductive_family();
     } else if (command == constructor_prefix) {
         parse_constructor();
+    } else if (command == quotient_prefix) {
+        parse_quotient();
     } else {
         dbgf("Not a known command type\n");
         error = true;
@@ -660,24 +673,11 @@ bool Parser::is_error() const {
     return error;
 }
 
-Parser::Parser() : error(false) {
+Parser::Parser(bool preludeMode) : error(false), prelude(preludeMode) {
     levels.push_back(lean::mk_level_zero());
     names.push_back(lean::name::anonymous());
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "Missing file name" << std::endl;
-        return 0;
-    }
-    std::ifstream stream(argv[1]);
-    std::stringstream buffer;
-    buffer << stream.rdbuf();
-    
-    Parser p;
-    p.handle_file(buffer.str());
-    
-    std::cout << "Error: " << p.is_error() << std::endl;
-
-    return 0;
+const std::vector<lean::declaration> & Parser::get_decls() const {
+    return decls;
 }
