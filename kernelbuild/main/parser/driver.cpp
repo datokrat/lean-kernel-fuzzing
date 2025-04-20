@@ -7,6 +7,7 @@ Author: Markus Himmel
 #include "parser.h"
 #include "kernel/environment.h"
 #include "kernel/init_module.h"
+#include "library/elab_environment.h"
 
 #include <iostream>
 #include <fstream>
@@ -26,37 +27,39 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     
-    std::cout << "a" << std::endl;
-
     lean_initialize_runtime_module();
     lean_object * res;
     // use same default as for Lean executables
     uint8_t builtin = 1;
     lean_initialize();
     lean_io_mark_end_initialization();
-    std::cout << "b " << argv[1] << std::endl;
     
     std::ifstream stream(argv[1]);
-    std::cout << "b1" << std::endl;
     std::stringstream buffer;
-    std::cout << "b2" << std::endl;
     buffer << stream.rdbuf();
-    std::cout << "b3" << std::endl;
     
     Parser p(true);
-    std::cout << "c" << std::endl;
     p.handle_file(buffer.str());
-    std::cout << "d" << std::endl;
 
     if (p.is_error()) {
         std::cout << "Prelude parsing error, not running environment." << std::endl;
         return 1;
     }
     
-    lean_object *env = lean_elab_environment_to_kernel_env(lean_mk_empty_environment(0, lean_io_mk_world()));
-    lean::environment environment(env);
+    std::cout << "Finished parsing the file, creating an empty environment" << std::endl;
+    
+    lean_object *io_ress = lean_mk_empty_environment(0, lean_io_mk_world());
+    lean_inc(io_ress);
+    lean_object *eenv = lean_io_result_get_value(io_ress);
+
+    std::cout << "a" << std::endl;
+    lean::elab_environment elab_env(eenv, true);
+    std::cout << "b" << std::endl;
+    lean::environment environment = elab_env.to_kernel_env();
+    std::cout << "c" << std::endl;
     
     for (const lean::declaration & d : p.get_decls()) {
+        std::printf("Trying to add a declaration\n");
         environment = environment.add(d);
     }
 

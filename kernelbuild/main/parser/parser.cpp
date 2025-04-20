@@ -303,6 +303,7 @@ sz::string_view universe_imax = "#UIM"_sz;
 sz::string_view universe_parameter = "#UP"_sz;
 
 void Parser::parse_level() {
+    std::cout << "Begin parse level" << std::endl;
     auto type = parse_string();
     if (type == universe_succ) {
         auto parent = parse_level_idx();
@@ -351,6 +352,7 @@ sz::string_view expression_natlit = "#ELN"_sz;
 sz::string_view expression_strlit = "#ELS"_sz;
 
 void Parser::parse_expression() {
+    std::cout << "Begin parsing expression" << std::endl;
     auto type = parse_string();
     if (error) return;
     if (type == expression_variable) {
@@ -449,6 +451,7 @@ void Parser::parse_expression() {
 }
 
 void Parser::parse_axiom() {
+    std::cout << "Begin parse axiom" << std::endl;
     if (!prelude) {
         dbgf("Not accepting axioms");
         error = true;
@@ -466,6 +469,7 @@ void Parser::parse_axiom() {
 }
 
 void Parser::parse_definition() {
+    std::cout << "Begin parse def" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -477,11 +481,15 @@ void Parser::parse_definition() {
     auto universeParameters = parse_name_star();
     if (error) return;
     
+    std::cout << "Going to call mk_definition" << std::endl;
     lean::declaration d = lean::mk_definition(name, universeParameters, type, value, hint);
+    std::cout << "Finished calling mk_definition" << std::endl;
     decls.push_back(d);
+    std::cout << "Finished calling push_back" << std::endl;
 }
 
 void Parser::parse_theorem() {
+    std::cout << "Begin parse theorem" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -496,6 +504,7 @@ void Parser::parse_theorem() {
 }
 
 void Parser::parse_opaque() {
+    std::cout << "Begin parse opaque" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -510,6 +519,7 @@ void Parser::parse_opaque() {
 }
 
 void Parser::parse_inductive() {
+    std::cout << "Begin parse inductive" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -540,6 +550,7 @@ void Parser::parse_inductive() {
 }
 
 void Parser::parse_inductive_family() {
+    std::cout << "Begin parse inductive family" << std::endl;
     auto numParams = parse_u64();
     if (error) return;
     auto numInductives = parse_u64();
@@ -568,6 +579,7 @@ void Parser::parse_inductive_family() {
 }
 
 void Parser::parse_constructor() {
+    std::cout << "Begin parse constructor" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -685,11 +697,8 @@ Parser::Parser(bool preludeMode) :
         decls(),
         constructors(),
         inductives() {
-    std::cout << "a" << std::endl;
     levels.push_back(lean::mk_level_zero());
-    std::cout << "b" << std::endl;
     names.push_back(lean::name::anonymous());
-    std::cout << "c" << std::endl;
 }
 
 const std::vector<lean::declaration> & Parser::get_decls() const {

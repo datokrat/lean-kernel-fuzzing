@@ -9,6 +9,7 @@ Author: Leonardo de Moura
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include <lean/config.h>
 
@@ -389,6 +390,7 @@ static inline lean_object * lean_alloc_ctor_memory(unsigned sz) {
 #elif defined(LEAN_MIMALLOC)
     unsigned sz1 = lean_align(sz, LEAN_OBJECT_SIZE_DELTA);
     lean_object* r = lean_alloc_small_object(sz);
+    printf("Allocating: %lld size %lld\n", (uint64_t)(void *)r, (uint64_t)sz);
     if (sz1 > sz) {
         size_t * end = (size_t*)(((char*)r) + sz1);
         end[-1] = 0;
@@ -421,7 +423,10 @@ static inline void lean_free_small_object(lean_object * o) {
 #ifdef LEAN_SMALL_ALLOCATOR
     lean_free_small(o);
 #elif defined(LEAN_MIMALLOC)
+    printf("Freeing something: %lld of size %lld, usable size %lld\n", (uint64_t)(void *)(o), (uint64_t)(o->m_cs_sz), (uint64_t)(mi_usable_size((void *) o)));
+
     mi_free_size((void *)o, o->m_cs_sz);
+    printf("Finished freeing something\n");
 #else
     size_t* ptr = (size_t*)o - 1;
     free_sized(ptr, *ptr + sizeof(size_t));
