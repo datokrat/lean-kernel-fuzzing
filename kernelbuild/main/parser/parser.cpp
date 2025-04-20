@@ -648,7 +648,7 @@ void Parser::parse_line() {
     }
 }
 
-sz::string_view expected_version = "markus-0.0.4\n"_sz;
+sz::string_view expected_version = "markus-0.0.5\n"_sz;
 
 void Parser::handle_file(sz::string_view file) {
     if (!file.starts_with(expected_version)) {
