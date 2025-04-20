@@ -7,4 +7,4 @@ inductive PowerOfTwo : Nat → Prop where
 
 theorem t : PowerOfTwo n → PowerOfTwo n
   | .one => .one
-  | .double _ _ => .double
+  | .double h => .double h
