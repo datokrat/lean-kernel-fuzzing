@@ -1,5 +1,5 @@
 prelude
-import Init.Prelude
+import Corpus.ExtendedPrelude
 
 mutual
 

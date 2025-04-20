@@ -1,5 +1,5 @@
 prelude
-import Init.Prelude
+import Corpus.ExtendedPrelude
 
 inductive X (α : Type u) where
   | const : α → X α
