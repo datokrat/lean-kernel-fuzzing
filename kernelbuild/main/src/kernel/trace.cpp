@@ -6,6 +6,7 @@ Author: Leonardo de Moura
 */
 #include <vector>
 #include <string>
+#include <stdlib.h>
 #include "util/io.h"
 #include "util/option_declarations.h"
 #include "library/elab_environment.h"
@@ -170,12 +171,13 @@ def pretty (f : Format) (w : Nat := defWidth) (indent : Nat := 0) (column := 0) 
 extern "C" object * lean_format_pretty(object * f, object * w, object * i, object * c);
 
 std::string pp_expr(elab_environment const & env, options const & opts, local_ctx const & lctx, expr const & e) {
-    options o = opts;
-    // o = o.update(name{"pp", "proofs"}, true); --
-    object_ref fmt = get_io_result<object_ref>(lean_pp_expr(env.to_obj_arg(), lean_mk_metavar_ctx(lean_box(0)), lctx.to_obj_arg(), o.to_obj_arg(),
-                                                            e.to_obj_arg(), io_mk_world()));
-    string_ref str(lean_format_pretty(fmt.to_obj_arg(), lean_unsigned_to_nat(80), lean_unsigned_to_nat(0), lean_unsigned_to_nat(0)));
-    return str.to_std_string();
+    abort();
+    // options o = opts;
+    // // o = o.update(name{"pp", "proofs"}, true); --
+    // object_ref fmt = get_io_result<object_ref>(lean_pp_expr(env.to_obj_arg(), lean_mk_metavar_ctx(lean_box(0)), lctx.to_obj_arg(), o.to_obj_arg(),
+    //                                                         e.to_obj_arg(), io_mk_world()));
+    // string_ref str(lean_format_pretty(fmt.to_obj_arg(), lean_unsigned_to_nat(80), lean_unsigned_to_nat(0), lean_unsigned_to_nat(0)));
+    // return str.to_std_string();
 }
 
 std::string pp_expr(elab_environment const & env, options const & opts, expr const & e) {

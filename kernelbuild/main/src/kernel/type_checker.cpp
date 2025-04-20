@@ -6,6 +6,7 @@ Author: Leonardo de Moura
 */
 #include <utility>
 #include <vector>
+#include <stdlib.h>
 #include "runtime/interrupt.h"
 #include "runtime/sstream.h"
 #include "runtime/flet.h"
@@ -560,20 +561,22 @@ optional<expr> reduce_native(environment const & env, expr const & e) {
     expr const & arg = app_arg(e);
     if (!is_constant(arg)) return none_expr();
     if (app_fn(e) == *g_lean_reduce_bool) {
-        object * r = ir::run_boxed_kernel(env, options(), const_name(arg), 0, nullptr);
-        if (!lean_is_scalar(r)) {
-            lean_dec_ref(r);
-            throw kernel_exception(env, "type checker failure, unexpected result value for 'Lean.reduceBool'");
-        }
-        return lean_unbox(r) == 0 ? some_expr(mk_bool_false()) : some_expr(mk_bool_true());
+        abort();
+        // object * r = ir::run_boxed_kernel(env, options(), const_name(arg), 0, nullptr);
+        // if (!lean_is_scalar(r)) {
+        //     lean_dec_ref(r);
+        //     throw kernel_exception(env, "type checker failure, unexpected result value for 'Lean.reduceBool'");
+        // }
+        // return lean_unbox(r) == 0 ? some_expr(mk_bool_false()) : some_expr(mk_bool_true());
     }
     if (app_fn(e) == *g_lean_reduce_nat) {
-        object * r = ir::run_boxed_kernel(env, options(), const_name(arg), 0, nullptr);
-        if (lean_is_scalar(r) || lean_is_mpz(r)) {
-            return some_expr(mk_lit(literal(nat(r))));
-        } else {
-            throw kernel_exception(env, "type checker failure, unexpected result value for 'Lean.reduceNat'");
-        }
+        abort();
+        // object * r = ir::run_boxed_kernel(env, options(), const_name(arg), 0, nullptr);
+        // if (lean_is_scalar(r) || lean_is_mpz(r)) {
+        //     return some_expr(mk_lit(literal(nat(r))));
+        // } else {
+        //     throw kernel_exception(env, "type checker failure, unexpected result value for 'Lean.reduceNat'");
+        // }
     }
     return none_expr();
 }

@@ -40,7 +40,7 @@ cc_library(
 
 cc_library(
     name = "kernel",
-    srcs = glob(["src/kernel/**/*.cpp", "src/runtime/**/*.cpp", "src/util/**/*.cpp", "src/library/**/*.cpp", "initialize/init.cpp", "lean_export/**/*.c"], exclude=["src/runtime/uv/**/*.c"]),
+    srcs = glob(["src/kernel/**/*.cpp", "src/runtime/**/*.cpp", "src/util/**/*.cpp", "src/library/**/*.cpp", "initialize/init.cpp", "lean_export/**/*.c"], exclude=["src/runtime/uv/**/*.c", "src/library/compiler/**/*.cpp"]),
     hdrs = glob(["src/kernel/**/*.h", "src/runtime/**/*.h", "src/util/**/*.h", "src/library/**/*.h", "initialize/init.h", "stdlib_flags.h"]),
     includes = [".", "src"],
     deps = [":mimalloc", ":lean_basics"],
