@@ -1,2 +1,8 @@
 MODULE.bazel.lock
 bazel-*
+output/
+input/
+parser.afl
+parser.afl-asan
+parser.afl-laf-intel
+parser.afl-redqueen
