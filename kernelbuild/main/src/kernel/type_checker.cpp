@@ -133,13 +133,20 @@ expr type_checker::infer_lambda(expr const & _e, bool infer_only) {
 
 expr type_checker::infer_pi(expr const & _e, bool infer_only) {
     std::cout << "infer_pi entered" << std::endl;
+    lean_object *obj_of_interest = (lean_object *) (uint64_t) 2199027555712;
+    expr res;
+    {
     flet<local_ctx> save_lctx(m_lctx, m_lctx);
+    {
     std::cout << "infer_pi a" << std::endl;
     buffer<expr> fvars;
+    {
     std::cout << "infer_pi b" << std::endl;
     buffer<level> us;
+    {
     std::cout << "infer_pi c" << std::endl;
     expr e = _e;
+    {
     std::cout << "infer_pi d" << std::endl;
     while (is_pi(e)) {
         std::cout << "infer_pi d" << std::endl;
@@ -170,8 +177,31 @@ expr type_checker::infer_pi(expr const & _e, bool infer_only) {
         r = mk_imax(us[i], r);
     }
     std::cout << "infer_pi p" << std::endl;
-    expr res = mk_sort(r);
-    std::cout << "infer_pi exited" << std::endl;
+    res = mk_sort(r);
+
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "end infer_pi d" << std::endl;
+    }
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "end infer_pi c" << std::endl;
+    }
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "end infer_pi b" << std::endl;
+    }
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "end infer_pi a" << std::endl;
+    }
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "freeing last local decl (except return)..." << std::endl;
+    }
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    std::cout << "infer_pi will return now" << std::endl;
     return res;
 }
 
