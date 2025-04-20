@@ -1,22 +1,22 @@
 prelude
 import Corpus.ExtendedPrelude
 
-inductive X (α : Type u) where
-  | nil : X α
-  | cons : α → X α → X α
+inductive NX (α : Type u) where
+  | nil : NX α
+  | cons : α → NX α → NX α
 
-inductive Y (α : Type u) where
-  | leaf : α → Y α
-  | branch : X (Y α) → Y α
+inductive NY (α : Type u) where
+  | leaf : α → NY α
+  | branch : NX (NY α) → NY α
 
 mutual
 
-def sizeX {α : Type u} : X (Y α) → Nat
+def sizeNX {α : Type u} : NX (NY α) → Nat
   | .nil => 0
-  | .cons head tail => Nat.add (sizeY head) (sizeX tail)
+  | .cons head tail => Nat.add (sizeNY head) (sizeNX tail)
 
-def sizeY {α : Type u} : Y α → Nat
+def sizeNY {α : Type u} : NY α → Nat
   | .leaf _ => 1
-  | .branch x => sizeX x
+  | .branch x => sizeNX x
 
 end

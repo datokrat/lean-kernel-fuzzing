@@ -24,7 +24,13 @@ def M.run (env : Environment) (goodIndices : Array ModuleIdx) (act : M α) : IO 
     ReaderT.run (r := { env, goodIndices }) do
       act
 
+def blockedNames : NameSet := .ofList [``sorryAx]
+
 def shouldDump (n : Name) : M Bool := do
+  if blockedNames.contains n then
+    return false
+  if n.toString.startsWith "Lean" then
+    return false
   let env := (← read).env
   let good := (← read).goodIndices
   return good.contains (env.getModuleIdxFor? n).get!
@@ -146,6 +152,8 @@ def dumpHints : ReducibilityHints → String
 partial def dumpConstant (c : Name) : M Unit := do
   if (← get).visitedConstants.contains c then
     return
+  if !(← shouldDump c) then
+    return
   match (← read).env.find? c |>.get! with
   | .axiomInfo val => do
     modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
@@ -195,6 +203,8 @@ where
       dumpConstant c
   dumpInductiveInner (val : InductiveVal) : M Unit := do
     if val.isUnsafe then
+      return
+    if !(← shouldDump val.name) then
       return
     if (← get).visitedConstants.contains c then
       return
