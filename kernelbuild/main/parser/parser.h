@@ -8,17 +8,21 @@ Author: Markus Himmel
 #include <stringzilla/stringzilla.hpp>
 #include "kernel/expr.h"
 #include "kernel/level.h"
+#include "kernel/declaration.h"
+#include "util/name_hash_map.h"
 #include <vector>
 
 namespace sz = ashvardanian::stringzilla;
 
-enum HintType {
-    O, A, R
+struct InductiveFamilyData {
+    lean::names universeParameters;
+    lean::nat numParams;
 };
 
-struct Hint {
-    HintType type;
-    std::uint64_t value;
+struct PreInductive {
+    lean::name name;
+    lean::expr type;
+    std::vector<lean::name> constructorNames;
 };
 
 class Parser {
@@ -44,41 +48,40 @@ private:
     std::vector<std::uint64_t> parse_u64_star();
     std::vector<std::uint64_t> parse_u64_amount(std::uint64_t n);
     bool parse_bool();
-    Hint parse_hint();
+    lean::reducibility_hints parse_hint();
 
     /* Parsing of lean-specific objects */
     lean::name parse_name_idx();
     lean::level parse_level_idx();
     lean::expr parse_expr_idx();
-    template<typename T> lean::list_ref<T> parse_obj_star(const std::vector<T> & objs);
-    template<typename T> lean::list_ref<T> parse_obj_amount(std::uint64_t n, const std::vector<T> & objs);
-    lean::list_ref<lean::level> parse_level_star();
-    lean::list_ref<lean::level> parse_level_amount(std::uint64_t n);
-    lean::list_ref<lean::name> parse_name_star();
-    lean::list_ref<lean::name> parse_name_amount(std::uint64_t n);
-
+    template<typename T> std::vector<T> parse_obj_star(const std::vector<T> & objs);
+    template<typename T> std::vector<T> parse_obj_amount(std::uint64_t n, const std::vector<T> & objs);
+    lean::levels parse_level_star();
+    lean::levels parse_level_amount(std::uint64_t n);
+    lean::names parse_name_star();
+    lean::names parse_name_amount(std::uint64_t n);
+    std::vector<lean::name> parse_name_vec_amount(std::uint64_t n);
     
     /* Parsing of specific lines */
     void parse_name();
     void parse_level();
     void parse_expression();
-    void parse_recrule();
     void parse_axiom();
-    void parse_quotient();
     void parse_definition();
     void parse_theorem();
     void parse_opaque();
     void parse_inductive();
+    void parse_inductive_family();
     void parse_constructor();
-    void parse_recursor();
     
     /* Parsing the current line */
     void parse_line();
 
     /* Data members */
     
-    // Current line
+    // Just the suffix of the line that is still to be parsed
     sz::string_view line;
+    // The entire line that is currently being parsed, for printing out during debugging
     sz::string_view full_line;
     
     // Was there ever an error
@@ -88,5 +91,7 @@ private:
     std::vector<lean::name> names;
     std::vector<lean::level> levels;
 
-    // TODO: environment??
+    std::vector<lean::declaration> decls;
+    lean::name_hash_map<lean::constructor> constructors;
+    lean::name_hash_map<lean::inductive_type> inductives;
 };

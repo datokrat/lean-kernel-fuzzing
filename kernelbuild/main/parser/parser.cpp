@@ -160,32 +160,32 @@ lean::level Parser::parse_level_idx() {
 }
 
 template<typename T>
-lean::list_ref<T> Parser::parse_obj_star(const std::vector<T> & objs) {
+std::vector<T> Parser::parse_obj_star(const std::vector<T> & objs) {
     std::vector<T> result;
     auto val = try_parse_string();
     while (!val.empty()) {
         auto num = convert_numeric<std::uint64_t>(val);
         if (error) {
-            return lean::list_ref<T>();
+            return std::vector<T>();
         }
         if (num >= objs.size()) {
             dbgf("Referenced an object that doesn't exist");
             error = true;
-            return lean::list_ref<T>();
+            return std::vector<T>();
         }
         result.push_back(objs[num]);
         val = try_parse_string();
     }
-    return lean::list_ref<T>(result.begin(), result.end());
+    return result;
 }
 
 template<typename T>
-lean::list_ref<T> Parser::parse_obj_amount(std::uint64_t n, const std::vector<T> & objs) {
+std::vector<T> Parser::parse_obj_amount(std::uint64_t n, const std::vector<T> & objs) {
     std::vector<lean::level> result(n);
     for (std::uint64_t i = 0; i < n; ++i) {
         auto num = parse_numeric<std::uint64_t>();
         if (error) {
-            return lean::list_ref<T>();
+            return std::vector<T>();
         }
         if (num >= objs.size()) {
             dbgf("Referenced an object that doesn't exist");
@@ -194,22 +194,30 @@ lean::list_ref<T> Parser::parse_obj_amount(std::uint64_t n, const std::vector<T>
         }
         result.push_back(objs[num]);
     }
-    return lean::list_ref<T>(result.begin(), result.end());
+    return result;
 }
 
-lean::list_ref<lean::level> Parser::parse_level_star() {
-    return parse_obj_star<lean::level>(levels);
+lean::levels Parser::parse_level_star() {
+    auto vec = parse_obj_star<lean::level>(levels);
+    return lean::list_ref<lean::level>(vec.begin(), vec.end());
 }
 
-lean::list_ref<lean::level> Parser::parse_level_amount(std::uint64_t n) {
-    return parse_obj_amount<lean::level>(n, levels);
+lean::levels Parser::parse_level_amount(std::uint64_t n) {
+    auto vec = parse_obj_amount<lean::level>(n, levels);
+    return lean::list_ref<lean::level>(vec.begin(), vec.end());
 }
 
-lean::list_ref<lean::name> Parser::parse_name_star() {
-    return parse_obj_star<lean::name>(names);
+lean::names Parser::parse_name_star() {
+    auto vec = parse_obj_star<lean::name>(names);
+    return lean::list_ref<lean::name>(vec.begin(), vec.end());
 }
 
-lean::list_ref<lean::name> Parser::parse_name_amount(std::uint64_t n) {
+lean::names Parser::parse_name_amount(std::uint64_t n) {
+    auto vec = parse_obj_amount<lean::name>(n, names);
+    return lean::list_ref<lean::name>(vec.begin(), vec.end());
+}
+
+std::vector<lean::name> Parser::parse_name_vec_amount(std::uint64_t n) {
     return parse_obj_amount<lean::name>(n, names);
 }
 
@@ -242,33 +250,21 @@ sz::string_view hint_o = "O"_sz;
 sz::string_view hint_a = "A"_sz;
 sz::string_view hint_r = "R"_sz;
 
-Hint hintO () {
-    return { O, 0 };
-}
-
-Hint hintA () {
-    return { A, 0 };
-}
-
-Hint hintR(uint64_t val) {
-    return { R, val };
-}
-
-Hint Parser::parse_hint() {
+lean::reducibility_hints Parser::parse_hint() {
     auto type = parse_string();
-    if (error) return hintO();
+    if (error) return lean::reducibility_hints::mk_opaque();
     if (type == hint_o) {
-        return hintO();
+        return lean::reducibility_hints::mk_opaque();
     } else if (type == hint_a) {
-        return hintA();
+        return lean::reducibility_hints::mk_abbreviation();
     } else if (type == hint_r) {
-        auto val = parse_u64();
-        if (error) return hintO();
-        return hintR(val);
+        auto val = parse_uint();
+        if (error) return lean::reducibility_hints::mk_opaque();
+        return lean::reducibility_hints::mk_regular(val);
     } else {
         dbgf("Unknown hint type\n");
         error = true;
-        return hintO();
+        return lean::reducibility_hints::mk_opaque();
     }
 }
 
@@ -276,13 +272,6 @@ sz::string_view name_string = "#NS"_sz;
 sz::string_view name_int = "#NI"_sz;
 
 void Parser::parse_name() {
-    auto index = parse_u64();
-    if (error) return;
-    if (index != names.size()) {
-        dbgf("Expected a different index");
-        error = true;
-        return;
-    }
     auto type = parse_string();
     if (error) return;
     auto parent = parse_name_idx();
@@ -317,13 +306,6 @@ sz::string_view universe_imax = "#UIM"_sz;
 sz::string_view universe_parameter = "#UP"_sz;
 
 void Parser::parse_level() {
-    auto index = parse_u64();
-    if (error) return;
-    if (index != levels.size()) {
-        dbgf("Expected a different index");
-        error = true;
-        return;
-    }
     auto type = parse_string();
     if (type == universe_succ) {
         auto parent = parse_level_idx();
@@ -372,13 +354,6 @@ sz::string_view expression_natlit = "#ELN"_sz;
 sz::string_view expression_strlit = "#ELS"_sz;
 
 void Parser::parse_expression() {
-    auto index = parse_u64();
-    if (error) return;
-    if (index != exprs.size()) {
-        dbgf("Expected a different index");
-        error = true;
-        return;
-    }
     auto type = parse_string();
     if (error) return;
     if (type == expression_variable) {
@@ -476,132 +451,149 @@ void Parser::parse_expression() {
     }
 }
 
-void Parser::parse_recrule() {
-    std::cout << "Have a recrule: " << line << std::endl;
-    line.remove_prefix(line.length());
-}
-
 void Parser::parse_axiom() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
+    auto type = parse_expr_idx();
     if (error) return;
-    auto universeParameters = parse_u64_star();
+    auto universeParameters = parse_name_star();
     if (error) return;
     
-    std::cout << "Have an axiom" << std::endl;
-}
-
-void Parser::parse_quotient() {
-    auto name = parse_u64();
-    if (error) return;
-    auto type = parse_u64();
-    if (error) return;
-    auto universeParameters = parse_u64_star();
-    if (error) return;
-    std::cout << "Have a quotient" << std::endl;
+    // TODO: ignore axioms in "unsafe mode"
+    lean::declaration d = lean::mk_axiom(name, universeParameters, type);
+    decls.push_back(d);
 }
 
 void Parser::parse_definition() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
+    auto type = parse_expr_idx();
     if (error) return;
-    auto value = parse_u64();
+    auto value = parse_expr_idx();
     if (error) return;
     auto hint = parse_hint();
     if (error) return;
-    auto universeParameters = parse_u64_star();
+    auto universeParameters = parse_name_star();
     if (error) return;
-    std::cout << "Have a definition" << std::endl;
+    
+    lean::declaration d = lean::mk_definition(name, universeParameters, type, value, hint);
+    decls.push_back(d);
 }
 
 void Parser::parse_theorem() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
+    auto type = parse_expr_idx();
     if (error) return;
-    auto value = parse_u64();
+    auto value = parse_expr_idx();
     if (error) return;
-    auto universeParameters = parse_u64_star();
+    auto universeParameters = parse_name_star();
     if (error) return;
-    std::cout << "Have a theorem" << std::endl;
+    
+    lean::declaration d = lean::mk_theorem(name, universeParameters, type, value);
+    decls.push_back(d);
 }
 
 void Parser::parse_opaque() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
+    auto type = parse_expr_idx();
     if (error) return;
-    auto value = parse_u64();
+    auto value = parse_expr_idx();
     if (error) return;
-    auto universeParameters = parse_u64_star();
+    auto universeParameters = parse_name_star();
     if (error) return;
-    std::cout << "Have a opaque" << std::endl;
+    
+    lean::declaration d = lean::mk_opaque(name, universeParameters, type, value, false);
+    decls.push_back(d);
 }
 
 void Parser::parse_inductive() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
-    if (error) return;
-    auto isRecursive = parse_bool();
-    if (error) return;
-    auto isNested = parse_bool();
-    if (error) return;
-    auto numParams = parse_u64();
-    if (error) return;
-    auto numIndices = parse_u64();
-    if (error) return;
-    auto numInductives = parse_u64();
-    if (error) return;
-    auto inductiveNames = parse_u64_amount(numInductives);
+    auto type = parse_expr_idx();
     if (error) return;
     auto numConstructors = parse_u64();
     if (error) return;
-    auto constructorNames = parse_u64_amount(numConstructors);
+    auto constructorNames = parse_name_vec_amount(numConstructors);
     if (error) return;
-    auto universeParameters = parse_u64_star();
-    if (error) return;
+    
+    std::vector<lean::constructor> constructorsVec(numConstructors);
+    
+    for (int i = 0; i < numConstructors; ++i) {
+        auto it = constructors.find(constructorNames[i]);
+        if (it == constructors.end()) {
+            dbgf("Referenced constructor that does not exist");
+            error = true;
+            return;
+        } else {
+            constructorsVec.push_back(it->second);
+        }
+    }
 
-    std::cout << "Have a inductive" << std::endl;
+    lean::constructors constructorsList = lean::list_ref<lean::constructor>(constructorsVec.begin(), constructorsVec.end());
+    
+    lean::inductive_type ind = lean::inductive_type(name, type, constructorsList);
+    inductives[name] = ind;
+}
+
+void Parser::parse_inductive_family() {
+    auto numParams = parse_u64();
+    if (error) return;
+    auto numInductives = parse_u64();
+    if (error) return;
+    auto inductiveNames = parse_name_vec_amount(numInductives);
+    if (error) return;
+    auto universeParameters = parse_name_star();
+    if (error) return;
+    
+    std::vector<lean::inductive_type> inductivesVec(numInductives);
+
+    for (int i = 0; i < numInductives; ++i) {
+        auto it = inductives.find(inductiveNames[i]);
+        if (it == inductives.end()) {
+            dbgf("Referenced inductive that does not exist");
+            error = true;
+            return;
+        } else {
+            inductivesVec.push_back(it->second);
+        }
+    }
+
+    lean::inductive_types inductivesList = lean::list_ref<lean::inductive_type>(inductivesVec.begin(), inductivesVec.end());
+    lean::declaration d = lean::mk_inductive_decl(universeParameters, lean::nat(numParams), inductivesList, false);
+    decls.push_back(d);
 }
 
 void Parser::parse_constructor() {
-    auto name = parse_u64();
+    auto name = parse_name_idx();
     if (error) return;
-    auto type = parse_u64();
+    auto type = parse_expr_idx();
     if (error) return;
-    auto parentInductive = parse_u64();
+    auto parentInductive = parse_name_idx(); // Unused
     if (error) return;
-    auto constructorIndex = parse_u64();
+    auto constructorIndex = parse_u64(); // Unused
     if (error) return;
-    auto numParams = parse_u64();
+    auto numParams = parse_u64(); // Unused
     if (error) return;
-    auto numFields = parse_u64();
+    auto numFields = parse_u64(); // Unused
     if (error) return;
-    auto universeParameters = parse_u64_star();
+    auto universeParameters = parse_name_star(); // Unused
     if (error) return;
-    std::cout << "Have a constructor"  << std::endl;
-}
 
-void Parser::parse_recursor() {
-    std::cout << "Have a recursor: " << line << std::endl;
-    line.remove_prefix(line.length());
+    constructors[name] = lean::pair_ref(name, type);
 }
 
 sz::string_view name_prefix = "#NAME"_sz;
 sz::string_view level_prefix = "#LVL"_sz;
 sz::string_view expression_prefix = "#EXPR"_sz;
-sz::string_view recrule_prefix = "#RECR"_sz;
 sz::string_view axiom_prefix = "#AX"_sz;
-sz::string_view quotient_prefix = "#QUOT"_sz;
 sz::string_view definition_prefix = "#DEF"_sz;
 sz::string_view theorem_prefix = "#THM"_sz;
 sz::string_view opaque_prefix = "#OPAQ"_sz;
 sz::string_view inductive_prefix = "#IND"_sz;
+sz::string_view inductive_family_prefix = "#INDF"_sz;
 sz::string_view constructor_prefix = "#CTOR"_sz;
-sz::string_view recursor_prefix = "#REC"_sz;
 
 void Parser::parse_line() {
     auto command = parse_string();
@@ -612,12 +604,8 @@ void Parser::parse_line() {
         parse_level();
     } else if (command == expression_prefix) {
         parse_expression();
-    } else if (command == recrule_prefix) {
-        parse_recrule();
     } else if (command == axiom_prefix) {
         parse_axiom();
-    } else if (command == quotient_prefix) {
-        parse_quotient();
     } else if (command == definition_prefix) {
         parse_definition();
     } else if (command == theorem_prefix) {
@@ -626,10 +614,10 @@ void Parser::parse_line() {
         parse_opaque();
     } else if (command == inductive_prefix) {
         parse_inductive();
+    } else if (command == inductive_family_prefix) {
+        parse_inductive_family();
     } else if (command == constructor_prefix) {
         parse_constructor();
-    } else if (command == recursor_prefix) {
-        parse_recursor();
     } else {
         dbgf("Not a known command type\n");
         error = true;
@@ -646,7 +634,7 @@ void Parser::parse_line() {
     }
 }
 
-sz::string_view expected_version = "markus-0.0.1\n"_sz;
+sz::string_view expected_version = "markus-0.0.4\n"_sz;
 
 void Parser::handle_file(sz::string_view file) {
     if (!file.starts_with(expected_version)) {
