@@ -1,10 +1,24 @@
 prelude
 import Corpus.ExtendedPrelude
-import Corpus.Arithmetic
+import Corpus.Add
+import Corpus.BEqLargeFalse
+import Corpus.BEqLargeTrue
+import Corpus.BEqOneZero
+import Corpus.BLELargeFalse
+import Corpus.BLELargeTrue
+import Corpus.BLEOneZero
 import Corpus.FunctionalInduction
 import Corpus.Inductive
 import Corpus.InductivePredicate
+import Corpus.MulLarge
+import Corpus.MulOne
+import Corpus.MulZero
 import Corpus.NestedInduction
+import Corpus.Pow
 import Corpus.String
+import Corpus.SubLargeGT
+import Corpus.SubLT
+import Corpus.SuccEqSucc
 import Corpus.UnitLike
 import Corpus.UniverseBumpingInduction
+import Corpus.ZeroEqZero
