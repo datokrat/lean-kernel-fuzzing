@@ -673,9 +673,22 @@ bool Parser::is_error() const {
     return error;
 }
 
-Parser::Parser(bool preludeMode) : error(false), prelude(preludeMode) {
+Parser::Parser(bool preludeMode) :
+        line(),
+        full_line(),
+        error(false),
+        prelude(preludeMode),
+        exprs(),
+        names(),
+        levels(),
+        decls(),
+        constructors(),
+        inductives() {
+    std::cout << "a" << std::endl;
     levels.push_back(lean::mk_level_zero());
+    std::cout << "b" << std::endl;
     names.push_back(lean::name::anonymous());
+    std::cout << "c" << std::endl;
 }
 
 const std::vector<lean::declaration> & Parser::get_decls() const {
