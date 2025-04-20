@@ -27,7 +27,7 @@ public:
     
     void handle_file(sz::string_view file);
 
-    bool is_error();
+    bool is_error() const;
 
 private:
     /* Basic parsing functions */
@@ -50,8 +50,13 @@ private:
     lean::name parse_name_idx();
     lean::level parse_level_idx();
     lean::expr parse_expr_idx();
-    std::vector<lean::level> parse_level_star();
-    std::vector<lean::level> parse_level_amount(std::uint64_t n);
+    template<typename T> lean::list_ref<T> parse_obj_star(const std::vector<T> & objs);
+    template<typename T> lean::list_ref<T> parse_obj_amount(std::uint64_t n, const std::vector<T> & objs);
+    lean::list_ref<lean::level> parse_level_star();
+    lean::list_ref<lean::level> parse_level_amount(std::uint64_t n);
+    lean::list_ref<lean::name> parse_name_star();
+    lean::list_ref<lean::name> parse_name_amount(std::uint64_t n);
+
     
     /* Parsing of specific lines */
     void parse_name();

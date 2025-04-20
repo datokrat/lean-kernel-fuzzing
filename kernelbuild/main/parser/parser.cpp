@@ -159,40 +159,58 @@ lean::level Parser::parse_level_idx() {
     return levels[idx];
 }
 
-std::vector<lean::level> Parser::parse_level_star() {
-    std::vector<lean::level> result;
+template<typename T>
+lean::list_ref<T> Parser::parse_obj_star(const std::vector<T> & objs) {
+    std::vector<T> result;
     auto val = try_parse_string();
     while (!val.empty()) {
         auto num = convert_numeric<std::uint64_t>(val);
         if (error) {
-            return result;
+            return lean::list_ref<T>();
         }
-        if (num >= levels.size()) {
-            dbgf("Referenced a level that doesn't exist");
+        if (num >= objs.size()) {
+            dbgf("Referenced an object that doesn't exist");
             error = true;
-            return result;
+            return lean::list_ref<T>();
         }
-        result.push_back(levels[num]);
+        result.push_back(objs[num]);
         val = try_parse_string();
     }
-    return result;
+    return lean::list_ref<T>(result.begin(), result.end());
 }
 
-std::vector<lean::level> Parser::parse_level_amount(std::uint64_t n) {
+template<typename T>
+lean::list_ref<T> Parser::parse_obj_amount(std::uint64_t n, const std::vector<T> & objs) {
     std::vector<lean::level> result(n);
     for (std::uint64_t i = 0; i < n; ++i) {
         auto num = parse_numeric<std::uint64_t>();
         if (error) {
-            return result;
+            return lean::list_ref<T>();
         }
-        if (num >= levels.size()) {
-            dbgf("Referenced a level that doesn't exist");
+        if (num >= objs.size()) {
+            dbgf("Referenced an object that doesn't exist");
             error = true;
             return result;
         }
-        result.push_back(levels[num]);
+        result.push_back(objs[num]);
     }
-    return result;
+    return lean::list_ref<T>(result.begin(), result.end());
+}
+
+lean::list_ref<lean::level> Parser::parse_level_star() {
+    return parse_obj_star<lean::level>(levels);
+}
+
+lean::list_ref<lean::level> Parser::parse_level_amount(std::uint64_t n) {
+    return parse_obj_amount<lean::level>(n, levels);
+}
+
+lean::list_ref<lean::name> Parser::parse_name_star() {
+    return parse_obj_star<lean::name>(names);
+}
+
+lean::list_ref<lean::name> Parser::parse_name_amount(std::uint64_t n) {
+    return parse_obj_amount<lean::name>(n, names);
 }
 
 lean::expr Parser::parse_expr_idx() {
@@ -649,7 +667,7 @@ void Parser::handle_file(sz::string_view file) {
     }
 }
 
-bool Parser::is_error() {
+bool Parser::is_error() const {
     return error;
 }
 
