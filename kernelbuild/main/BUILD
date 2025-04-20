@@ -32,6 +32,7 @@ cc_library(
 
 cc_library(
     name = "lean_basics",
+    srcs = ["src/include/lean/debug.cpp"],
     hdrs = glob(["src/include/**/*.h"]),
     includes = ["src/include"],
     deps = [":mimalloc"],

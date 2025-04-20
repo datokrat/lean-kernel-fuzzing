@@ -133,6 +133,9 @@ typedef struct {
     unsigned m_tag:8;
 } lean_object;
 
+bool checkGo();
+void setGo(bool value);
+
 /*
 In our runtime, a Lean function consume the reference counter (RC) of its argument or not.
 We say this behavior is part of the "calling convention" for the function. We say an argument uses:
@@ -395,6 +398,12 @@ static inline lean_object * lean_alloc_ctor_memory(unsigned sz) {
         size_t * end = (size_t*)(((char*)r) + sz1);
         end[-1] = 0;
     }
+    if (((uint64_t)(void *)(r)) == 2199027555712) {
+        setGo(true);
+    }
+    lean_object *obj_of_interest = (lean_object *) (uint64_t) 2199027555712;
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
     return r;
 #else
     return lean_alloc_small_object(sz);
@@ -424,9 +433,16 @@ static inline void lean_free_small_object(lean_object * o) {
     lean_free_small(o);
 #elif defined(LEAN_MIMALLOC)
     printf("Freeing something: %lld of size %lld, usable size %lld\n", (uint64_t)(void *)(o), (uint64_t)(o->m_cs_sz), (uint64_t)(mi_usable_size((void *) o)));
-
+    lean_object *obj_of_interest = (lean_object *) (uint64_t) 2199027555712;
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
+    if (((uint64_t)(void *)(o)) == 2199027555712) {
+        setGo(false);
+    }
     mi_free_size((void *)o, o->m_cs_sz);
     printf("Finished freeing something\n");
+    if (checkGo()) printf("Usable size of interest: %lld\n", (uint64_t)(mi_usable_size((void *) (obj_of_interest))));
+    if (checkGo()) printf("Block size of interest: %lld\n", obj_of_interest->m_cs_sz);
 #else
     size_t* ptr = (size_t*)o - 1;
     free_sized(ptr, *ptr + sizeof(size_t));
