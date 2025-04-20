@@ -35,6 +35,9 @@ public:
 
     const std::vector<lean::declaration> & get_decls() const;
 
+    // Returns false if it was not added.
+    bool add_false();
+
 private:
     /* Basic parsing functions */
     sz::string_view try_parse_string();

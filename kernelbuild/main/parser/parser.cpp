@@ -281,7 +281,6 @@ void Parser::parse_name() {
         lean::name n(parent, lean::string_ref(compstr));
         names.push_back(n);
 
-        std::cout << "Have a string name: " << n.to_string() << std::endl;
     } else if (type == name_int) {
         auto comp = parse_u64();
         if (error) return;
@@ -289,7 +288,6 @@ void Parser::parse_name() {
         lean::name n(parent, lean::nat(comp));
         names.push_back(n);
 
-        std::cout << "Have an int name: " << n.to_string() << std::endl;
     } else {
         dbgf("Unknown name type\n");
         error = true;
@@ -303,14 +301,12 @@ sz::string_view universe_imax = "#UIM"_sz;
 sz::string_view universe_parameter = "#UP"_sz;
 
 void Parser::parse_level() {
-    std::cout << "Begin parse level" << std::endl;
     auto type = parse_string();
     if (type == universe_succ) {
         auto parent = parse_level_idx();
         if (error) return;
         lean::level l = lean::mk_succ(parent);
         levels.push_back(l);
-        std::cout << "Have a universe successor" << std::endl;
     } else if (type == universe_max) {
         auto lhs = parse_level_idx();
         if (error) return;
@@ -318,7 +314,6 @@ void Parser::parse_level() {
         if (error) return;
         lean::level l = lean::mk_max(lhs, rhs);
         levels.push_back(l);
-        std::cout << "Have a universe max" << std::endl;
     } else if (type == universe_imax) {
         auto lhs = parse_level_idx();
         if (error) return;
@@ -326,13 +321,11 @@ void Parser::parse_level() {
         if (error) return;
         lean::level l = lean::mk_imax(lhs, rhs);
         levels.push_back(l);
-        std::cout << "Have a universe imax" << std::endl;
     } else if (type == universe_parameter) {
         auto parameter = parse_name_idx();
         if (error) return;
         lean::level l = lean::mk_univ_param(parameter);
         levels.push_back(l);
-        std::cout << "Have a universe parameter" << std::endl;
     } else {
         dbgf("Unknown universe type\n");
         error = true;
@@ -352,7 +345,6 @@ sz::string_view expression_natlit = "#ELN"_sz;
 sz::string_view expression_strlit = "#ELS"_sz;
 
 void Parser::parse_expression() {
-    std::cout << "Begin parsing expression" << std::endl;
     auto type = parse_string();
     if (error) return;
     if (type == expression_variable) {
@@ -360,13 +352,11 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_bvar(lean::nat(deBruijnIndex));
         exprs.push_back(e);
-        std::cout << "Have a variable expression" << std::endl;
     } else if (type == expression_sort) {
         auto universe = parse_level_idx();
         if (error) return;
         lean::expr e = lean::mk_sort(universe);
         exprs.push_back(e);
-        std::cout << "Have a sort expression" << std::endl;
     } else if (type == expression_constant) {
         auto name = parse_name_idx();
         if (error) return;
@@ -374,7 +364,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_const(name, universes);
         exprs.push_back(e);
-        std::cout << "Have a constant expression" << std::endl;
     } else if (type == expression_application) {
         auto lhs = parse_expr_idx();
         if (error) return;
@@ -382,7 +371,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_app(lhs, rhs);
         exprs.push_back(e);
-        std::cout << "Have an application expression" << std::endl;
     } else if (type == expression_lambda) {
         parse_string(); // ignored, we don't care
         if (error) return;
@@ -394,7 +382,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_lambda(binderName, binderType, body);
         exprs.push_back(e);
-        std::cout << "Have a lambda expression" << std::endl;
     } else if (type == expression_pi) {
         parse_string(); // ignored, we don't care
         if (error) return;
@@ -406,7 +393,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_pi(binderName, binderType, body);
         exprs.push_back(e);
-        std::cout << "Have a pi expression" << std::endl;
     } else if (type == expression_let) {
         auto binderName = parse_name_idx();
         if (error) return;
@@ -418,7 +404,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_let(binderName, binderType, boundValue, body);
         exprs.push_back(e);
-        std::cout << "Have a let expression" << std::endl;
     } else if (type == expression_projection) {
         auto typeName = parse_name_idx();
         if (error) return;
@@ -428,7 +413,6 @@ void Parser::parse_expression() {
         if (error) return;
         lean::expr e = lean::mk_proj(typeName, fieldIndex, value);
         exprs.push_back(e);
-        std::cout << "Have a projection expression" << std::endl;
     } else if (type == expression_natlit) {
         auto value = parse_string();
         if (error) return;
@@ -436,13 +420,11 @@ void Parser::parse_expression() {
         lean::mpz num(s.c_str());
         lean::expr e = lean::mk_lit(lean::literal(num));
         exprs.push_back(e);
-        std::cout << "Have a nat literal" << std::endl;
     } else if (type == expression_strlit) {
         auto value = parse_hexstring();
         if (error) return;
         lean::expr e = lean::mk_lit(lean::literal(value.c_str()));
         exprs.push_back(e);
-        std::cout << "Have a string literal: " << value << std::endl;
     } else {
         dbgf("Unknown expression type\n");
         error = true;
@@ -451,7 +433,6 @@ void Parser::parse_expression() {
 }
 
 void Parser::parse_axiom() {
-    std::cout << "Begin parse axiom" << std::endl;
     if (!prelude) {
         dbgf("Not accepting axioms");
         error = true;
@@ -469,7 +450,6 @@ void Parser::parse_axiom() {
 }
 
 void Parser::parse_definition() {
-    std::cout << "Begin parse def" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -481,15 +461,11 @@ void Parser::parse_definition() {
     auto universeParameters = parse_name_star();
     if (error) return;
     
-    std::cout << "Going to call mk_definition" << std::endl;
     lean::declaration d = lean::mk_definition(name, universeParameters, type, value, hint);
-    std::cout << "Finished calling mk_definition" << std::endl;
     decls.push_back(d);
-    std::cout << "Finished calling push_back" << std::endl;
 }
 
 void Parser::parse_theorem() {
-    std::cout << "Begin parse theorem" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -504,7 +480,6 @@ void Parser::parse_theorem() {
 }
 
 void Parser::parse_opaque() {
-    std::cout << "Begin parse opaque" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -519,7 +494,6 @@ void Parser::parse_opaque() {
 }
 
 void Parser::parse_inductive() {
-    std::cout << "Begin parse inductive" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -534,7 +508,6 @@ void Parser::parse_inductive() {
     for (uint64_t i = 0; i < numConstructors; ++i) {
         auto it = constructors.find(constructorNames[i]);
         if (it == constructors.end()) {
-            std::cout << constructorNames[i] << std::endl;
             dbgf("Referenced constructor that does not exist\n");
             error = true;
             return;
@@ -550,7 +523,6 @@ void Parser::parse_inductive() {
 }
 
 void Parser::parse_inductive_family() {
-    std::cout << "Begin parse inductive family" << std::endl;
     auto numParams = parse_u64();
     if (error) return;
     auto numInductives = parse_u64();
@@ -579,7 +551,6 @@ void Parser::parse_inductive_family() {
 }
 
 void Parser::parse_constructor() {
-    std::cout << "Begin parse constructor" << std::endl;
     auto name = parse_name_idx();
     if (error) return;
     auto type = parse_expr_idx();
@@ -597,6 +568,25 @@ void Parser::parse_constructor() {
 
     lean::constructor c = lean::pair_ref(name, type);
     constructors.insert( { name, c });
+}
+
+bool Parser::add_false() {
+    if (exprs.empty()) {
+        return false;
+    }
+    lean::expr possibleProof = exprs.back();
+
+    std::uint64_t falseNameId = names.size();
+    lean::name falseName(names[0], lean::string_ref("False"));
+    names.push_back(falseName);
+    
+    lean::expr falseType = lean::mk_const(falseName);
+    
+    lean::name fooName(names[0], lean::string_ref("foo"));
+
+    lean::declaration d = lean::mk_theorem(fooName, lean::names(), falseType, possibleProof);
+    decls.push_back(d);
+    return true;
 }
 
 lean::declaration mk_quot() {
@@ -656,7 +646,6 @@ void Parser::parse_line() {
     
     if (!line.empty()) {
         dbgf("Not fully consumed\n");
-        std::cout << full_line << std::endl;
         error = true;
     }
 }

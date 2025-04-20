@@ -12,6 +12,7 @@ Author: Markus Himmel
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unistd.h>
 
 extern "C" void lean_initialize_runtime_module();
 extern "C" void lean_initialize();
@@ -21,11 +22,17 @@ extern "C" void lean_io_mark_end_initialization();
 extern "C" lean_object* lean_mk_empty_environment(uint32_t trust_level, lean_object* /* world */);
 extern "C" lean_object* lean_elab_environment_to_kernel_env(lean_object* x_1);
 
+#ifdef __AFL_FUZZ_TESTCASE_LEN
+
+__AFL_FUZZ_INIT();
+
+#endif
+
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "Missing file name" << std::endl;
-        return 0;
-    }
+    // if (argc < 2) {
+    //     std::cout << "Missing file name" << std::endl;
+    //     return 0;
+    // }
     
     lean_initialize_runtime_module();
     lean_object * res;
@@ -34,7 +41,7 @@ int main(int argc, char* argv[]) {
     lean_initialize();
     lean_io_mark_end_initialization();
     
-    std::ifstream stream(argv[1]);
+    std::ifstream stream("prelude.elean");
     std::stringstream buffer;
     buffer << stream.rdbuf();
     
@@ -42,26 +49,81 @@ int main(int argc, char* argv[]) {
     p.handle_file(buffer.str());
 
     if (p.is_error()) {
-        std::cout << "Prelude parsing error, not running environment." << std::endl;
         return 1;
     }
-    
-    std::cout << "Finished parsing the file, creating an empty environment" << std::endl;
     
     lean_object *io_ress = lean_mk_empty_environment(0, lean_io_mk_world());
     lean_inc(io_ress);
     lean_object *eenv = lean_io_result_get_value(io_ress);
 
-    std::cout << "a" << std::endl;
     lean::elab_environment elab_env(eenv, true);
-    std::cout << "b" << std::endl;
-    lean::environment environment = elab_env.to_kernel_env();
-    std::cout << "c" << std::endl;
     
     for (const lean::declaration & d : p.get_decls()) {
-        std::printf("Trying to add a declaration\n");
-        environment = environment.add(d);
+        elab_env = elab_env.add(d);
     }
+    
+#ifdef __AFL_FUZZ_TESTCASE_LEN
+
+    #ifdef __AFL_HAVE_MANUAL_CONTROL
+	__AFL_INIT();
+    #endif
+
+    unsigned char *buf = __AFL_FUZZ_TESTCASE_BUF;
+
+    while (__AFL_LOOP(10000)) {
+        unsigned long len = __AFL_FUZZ_TESTCASE_LEN;
+
+        sz::string_view data = { (const char *)buf, len };
+        
+        Parser p2(false);
+        p2.handle_file(data);
+
+        if (p2.is_error()) {
+            continue;
+        }
+        
+        lean::elab_environment loop_env(elab_env);
+
+        bool kernel_error = false;
+        bool added_false = p2.add_false();
+        try {
+            for (const lean::declaration & d : p2.get_decls()) {
+                loop_env = loop_env.add(d);
+            }
+        } catch (...) {
+            // Did not succeed
+            kernel_error = true;
+        }
+        
+        if (added_false && !kernel_error) {
+            abort();
+        }
+
+    }
+#else
+
+    std::ifstream stream2(argv[1]);
+    std::stringstream buffer2;
+    buffer2 << stream2.rdbuf();
+    
+    Parser p2(false);
+    p2.handle_file(buffer2.str());
+
+    if (p2.is_error()) {
+        std::cout << "Parse error" << std::endl;
+        return 1;
+    }
+    
+    std::cout << "Finished parsing." << std::endl;
+    
+    lean::elab_environment loop_env(elab_env);
+
+    p2.add_false();
+    for (const lean::declaration & d : p2.get_decls()) {
+        loop_env = loop_env.add(d);
+    }
+
+#endif
 
     return 0;
 }
