@@ -25,7 +25,7 @@ extern "C" LEAN_EXPORT void lean_initialize_runtime_module() {
     initialize_mutex();
     initialize_process();
     initialize_stack_overflow();
-    initialize_libuv();
+    // NOPE: initialize_libuv();
 }
 void initialize_runtime_module() {
     lean_initialize_runtime_module();
