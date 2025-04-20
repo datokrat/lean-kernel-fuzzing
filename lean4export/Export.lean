@@ -198,6 +198,7 @@ where
     dumpDeps val.type
     for ctor in val.ctors do
       dumpDeps ((← read).env.find? ctor |>.get!.type)
+      dumpConstant ctor
     let ctorNameIdxs ← val.ctors.mapM (fun ctor => dumpName ctor)
     IO.println s!"#IND {← dumpName c} {← dumpExpr val.type} {val.numCtors} {seq ctorNameIdxs}"
   dumpInductive (val : InductiveVal) : M Unit := do
