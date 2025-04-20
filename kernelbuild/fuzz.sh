@@ -74,18 +74,18 @@ SUFF31=""
 ARG0="-a ascii"                                       # Master instance
 ARG1="-a ascii"
 ARG2="-a ascii"
-ARG3="-a ascii -c ./sql.afl-redqueen"
-ARG4="-a ascii -c ./sql.afl-redqueen -l 2AT"
+ARG3="-a ascii -c ./parser.afl-redqueen"
+ARG4="-a ascii -c ./parser.afl-redqueen -l 2AT"
 ARG5="-a ascii -P explore -p seek"
 ARG6="-P explore -p rare"
 ARG7="-a ascii -P exploit"
 ARG8="-a ascii -p fast -Z"
 ARG9="-a ascii -p coe"
 ARG10="-L 0"
-ARG11="-L 0"
+ARG11="-a ascii -L 0"
 ARG12="-L 0 -Z"
 ARG13="-Z -P explore -p fast "
-ARG14="-a ascii"
+ARG14=""
 ARG15="-a ascii"
 ARG16="-a ascii -P exploit"
 ARG17="-a ascii -P exploit"
@@ -106,7 +106,7 @@ ARG31="-p exploit"
 
 display_help() {
   cat <<EOF
-Usage: $0 <number_of_cpu> <input_folder> <output_folder> <binary_name>
+Usage: $0 <number_of_cpu>
    number_of_cpu : number of slave fuzzers to start (max 31)
    input_folder  : seed corpus directory
    output_folder : afl output directory
@@ -119,13 +119,13 @@ EOF
 }
 
 # basic arg‑count sanity check
-[[ $# -lt 4 || $# -gt 4 ]] && display_help
+[[ $# -lt 1 || $# -gt 1 ]] && display_help
 
 # ---------------- command‑line parsing -----------------
 number_of_cpu=$1
-input_folder=$2
-output_folder=$3
-binary_name=$4
+input_folder=input
+output_folder=output
+binary_name=parser.afl
 
 # safety clamp: script only honours the first 31 slaves (plus the master)
 (( number_of_cpu > 31 )) && number_of_cpu=31
