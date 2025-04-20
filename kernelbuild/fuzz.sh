@@ -39,7 +39,8 @@ ENV31=""
 # --------  per‑instance ascii suffixes  ---------
 SUFF0=""                                       # Master instance
 SUFF1="-asan"
-SUFF2="-laf-intel"
+#SUFF2="-laf-intel"
+SUFF2=""
 SUFF3=""
 SUFF4=""
 SUFF5=""
@@ -125,7 +126,7 @@ EOF
 number_of_cpu=$1
 input_folder=input
 output_folder=output
-binary_name=parser.afl
+binary_name=./parser.afl
 
 # safety clamp: script only honours the first 31 slaves (plus the master)
 (( number_of_cpu > 31 )) && number_of_cpu=31
@@ -134,13 +135,13 @@ binary_name=parser.afl
 get_var () { local v="$1$2"; printf '%s' "${!v}"; }
 
 # -------------------- launch master ---------------------
-env AFL_AUTORESUME=1 $(get_var ENV 0) \
+env AFL_FORKSRV_INIT_TMOUT=1000000 AFL_AUTORESUME=1 $(get_var ENV 0) \
     screen -dmS Main bash -c \
 	"afl-fuzz -m 1024 -i \"$input_folder\" -o \"$output_folder\" -M Main $(get_var ARG 0) -- \"$binary_name$(get_var SUFF 0)\""
 
 # -------------------- launch slaves ---------------------
 for (( idx=1; idx<=number_of_cpu; idx++ )); do
-  env AFL_AUTORESUME=1 $(get_var ENV $idx) \
+  env AFL_FORKSRV_INIT_TMOUT=1000000 AFL_AUTORESUME=1 $(get_var ENV $idx) \
       screen -dmS "Secondary$idx" bash -c \
 	  "afl-fuzz -m 1024 -i \"$input_folder\" -o \"$output_folder\" -S Secondary$idx $(get_var ARG $idx) -- \"$binary_name$(get_var SUFF $idx)\""
 done
