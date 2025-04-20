@@ -110,7 +110,7 @@ std::vector<T> Parser::parse_numeric_star() {
 
 template <typename T>
 std::vector<T> Parser::parse_numeric_amount(std::uint64_t n) {
-    std::vector<T> result(n);
+    std::vector<T> result;
     for (std::uint64_t i = 0; i < n; ++i) {
         auto num = parse_numeric<T>();
         if (error) {
@@ -181,7 +181,7 @@ std::vector<T> Parser::parse_obj_star(const std::vector<T> & objs) {
 
 template<typename T>
 std::vector<T> Parser::parse_obj_amount(std::uint64_t n, const std::vector<T> & objs) {
-    std::vector<lean::level> result(n);
+    std::vector<T> result;
     for (std::uint64_t i = 0; i < n; ++i) {
         auto num = parse_numeric<std::uint64_t>();
         if (error) {
@@ -373,7 +373,7 @@ void Parser::parse_expression() {
         if (error) return;
         auto universes = parse_level_star();
         if (error) return;
-        lean::expr e = lean::mk_const(name, lean::levels(universes.begin(), universes.end()));
+        lean::expr e = lean::mk_const(name, universes);
         exprs.push_back(e);
         std::cout << "Have a constant expression" << std::endl;
     } else if (type == expression_application) {
@@ -518,9 +518,9 @@ void Parser::parse_inductive() {
     auto constructorNames = parse_name_vec_amount(numConstructors);
     if (error) return;
     
-    std::vector<lean::constructor> constructorsVec(numConstructors);
+    std::vector<lean::constructor> constructorsVec;
     
-    for (int i = 0; i < numConstructors; ++i) {
+    for (uint64_t i = 0; i < numConstructors; ++i) {
         auto it = constructors.find(constructorNames[i]);
         if (it == constructors.end()) {
             dbgf("Referenced constructor that does not exist");
@@ -534,7 +534,7 @@ void Parser::parse_inductive() {
     lean::constructors constructorsList = lean::list_ref<lean::constructor>(constructorsVec.begin(), constructorsVec.end());
     
     lean::inductive_type ind = lean::inductive_type(name, type, constructorsList);
-    inductives[name] = ind;
+    inductives.insert({ name, ind });
 }
 
 void Parser::parse_inductive_family() {
@@ -547,9 +547,9 @@ void Parser::parse_inductive_family() {
     auto universeParameters = parse_name_star();
     if (error) return;
     
-    std::vector<lean::inductive_type> inductivesVec(numInductives);
+    std::vector<lean::inductive_type> inductivesVec;
 
-    for (int i = 0; i < numInductives; ++i) {
+    for (uint64_t i = 0; i < numInductives; ++i) {
         auto it = inductives.find(inductiveNames[i]);
         if (it == inductives.end()) {
             dbgf("Referenced inductive that does not exist");
@@ -581,7 +581,8 @@ void Parser::parse_constructor() {
     auto universeParameters = parse_name_star(); // Unused
     if (error) return;
 
-    constructors[name] = lean::pair_ref(name, type);
+    lean::constructor c = lean::pair_ref(name, type);
+    constructors.insert( { name, c });
 }
 
 sz::string_view name_prefix = "#NAME"_sz;

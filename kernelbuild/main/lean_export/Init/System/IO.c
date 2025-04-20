@@ -2,6 +2,7 @@
 // Module: Init.System.IO
 // Imports: Init.System.IOError Init.System.FilePath Init.System.ST Init.Data.Ord
 #include <lean/lean.h>
+#include <stdlib.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wunused-label"
