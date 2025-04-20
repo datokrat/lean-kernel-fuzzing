@@ -8,6 +8,7 @@ instance : Hashable RecursorRule where
 
 structure Context where
   env : Environment
+  goodIndices : Array ModuleIdx
 
 structure State where
   visitedNames : HashMap Name Nat := .insert {} .anonymous 0
@@ -18,10 +19,15 @@ structure State where
 
 abbrev M := ReaderT Context <| StateT State IO
 
-def M.run (env : Environment) (act : M α) : IO α :=
+def M.run (env : Environment) (goodIndices : Array ModuleIdx) (act : M α) : IO α :=
   StateT.run' (s := {}) do
-    ReaderT.run (r := { env }) do
+    ReaderT.run (r := { env, goodIndices }) do
       act
+
+def shouldDump (n : Name) : M Bool := do
+  let env := (← read).env
+  let good := (← read).goodIndices
+  return good.contains (env.getModuleIdxFor? n).get!
 
 @[inline]
 def getIdx [Hashable α] [BEq α] (x : α) (getM : State → HashMap α Nat) (setM : State → HashMap α Nat → State) (pref : String) (rec : M String) : M Nat := do
@@ -142,6 +148,8 @@ instance : Min Name where
 
 
 partial def dumpConstant (c : Name) : M Unit := do
+  if !(← shouldDump c) then
+    return
   if (← get).visitedConstants.contains c then
     return
   modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
