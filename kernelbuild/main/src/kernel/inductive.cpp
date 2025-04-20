@@ -162,14 +162,10 @@ public:
     add_inductive_fn(environment const & env, diagnostics * diag, inductive_decl const & decl, unsigned nnested):
         m_env(env), m_ngen(*g_ind_fresh), m_diag(diag), m_lparams(decl.get_lparams()), m_is_unsafe(decl.is_unsafe()),
         m_nnested(nnested) {
-        std::cout << "add_inductive_fn a" << std::endl;
         if (!decl.get_nparams().is_small())
             throw kernel_exception(env, "invalid inductive datatype, number of parameters is too big");
-        std::cout << "add_inductive_fn b" << std::endl;
         m_nparams = decl.get_nparams().get_small_value();
-        std::cout << "add_inductive_fn c" << std::endl;
         to_buffer(decl.get_types(), m_ind_types);
-        std::cout << "add_inductive_fn d" << std::endl;
     }
 
     type_checker tc() { return type_checker(m_env, m_lctx, m_diag, m_is_unsafe ? definition_safety::unsafe : definition_safety::safe); }
@@ -415,26 +411,18 @@ public:
         constructor fields are in acceptable universe levels, positivity constraints, and returns the expected result. */
     void check_constructors() {
         for (unsigned idx = 0; idx < m_ind_types.size(); idx++) {
-            std::cout << "check_constructors a" << std::endl;
             inductive_type const & ind_type = m_ind_types[idx];
             name_set found_cnstrs;
             for (constructor const & cnstr : ind_type.get_cnstrs()) {
-                std::cout << "check_constructors b" << std::endl;
                 name const & n = constructor_name(cnstr);
                 if (found_cnstrs.contains(n)) {
                     throw kernel_exception(m_env, sstream() << "duplicate constructor name '" << n << "'");
                 }
-                std::cout << "check_constructors c" << std::endl;
                 found_cnstrs.insert(n);
-                std::cout << "check_constructors d" << std::endl;
                 expr t = constructor_type(cnstr);
-                std::cout << "check_constructors e" << std::endl;
                 m_env.check_name(n);
-                std::cout << "check_constructors f" << std::endl;
                 check_no_metavar_no_fvar(m_env, n, t);
-                std::cout << "check_constructors g" << std::endl;
                 tc().check(t, m_lparams);
-                std::cout << "check_constructors h" << std::endl;
                 unsigned i = 0;
                 while (is_pi(t)) {
                     if (i < m_nparams) {
@@ -785,25 +773,15 @@ public:
     }
 
     environment operator()() {
-        std::cout << "operator() a" << std::endl;
         m_env.check_duplicated_univ_params(m_lparams);
-        std::cout << "operator() b" << std::endl;
         check_inductive_types();
-        std::cout << "operator() c" << std::endl;
         declare_inductive_types();
-        std::cout << "operator() d" << std::endl;
         check_constructors();
-        std::cout << "operator() e" << std::endl;
         declare_constructors();
-        std::cout << "operator() f" << std::endl;
         init_elim_level();
-        std::cout << "operator() g" << std::endl;
         init_K_target();
-        std::cout << "operator() h" << std::endl;
         mk_rec_infos();
-        std::cout << "operator() i" << std::endl;
         declare_recursors();
-        std::cout << "operator() j" << std::endl;
         return m_env;
     }
 };
@@ -1133,21 +1111,14 @@ static pair<names, name_map<name>> mk_aux_rec_name_map(environment const & aux_e
 }
 
 environment environment::add_inductive(declaration const & d) const {
-    std::cout << "add_inductive a" << std::endl;
     elim_nested_inductive_result res = elim_nested_inductive_fn(*this, d)();
-    std::cout << "add_inductive b" << std::endl;
     unsigned nnested = res.m_aux2nested.size();
-    std::cout << "add_inductive c" << std::endl;
     scoped_diagnostics diag(*this, true);
-    std::cout << "add_inductive d" << std::endl;
     environment aux_env = add_inductive_fn(*this, diag.get(), inductive_decl(res.m_aux_decl), nnested)();
-    std::cout << "add_inductive e" << std::endl;
     if (!nnested) {
-        std::cout << "add_inductive f1" << std::endl;
         /* `d` did not contain nested inductive types. */
         return diag.update(aux_env);
     } else {
-        std::cout << "add_inductive f2" << std::endl;
         /* Restore nested inductives. */
         inductive_decl ind_d(d);
         names all_ind_names = get_all_inductive_names(ind_d);

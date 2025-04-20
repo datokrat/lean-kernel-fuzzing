@@ -132,47 +132,27 @@ expr type_checker::infer_lambda(expr const & _e, bool infer_only) {
 }
 
 expr type_checker::infer_pi(expr const & _e, bool infer_only) {
-    std::cout << "infer_pi entered" << std::endl;
     flet<local_ctx> save_lctx(m_lctx, m_lctx);
-    std::cout << "infer_pi a" << std::endl;
     buffer<expr> fvars;
-    std::cout << "infer_pi b" << std::endl;
     buffer<level> us;
-    std::cout << "infer_pi c" << std::endl;
     expr e = _e;
-    std::cout << "infer_pi d" << std::endl;
     while (is_pi(e)) {
-        std::cout << "infer_pi d" << std::endl;
         expr d  = instantiate_rev(binding_domain(e), fvars.size(), fvars.data());
-        std::cout << "infer_pi e" << std::endl;
         expr t1 = ensure_sort_core(infer_type_core(d, infer_only), d);
-        std::cout << "infer_pi f" << std::endl;
         us.push_back(sort_level(t1));
-        std::cout << "infer_pi g" << std::endl;
         expr fvar  = m_lctx.mk_local_decl(m_st->m_ngen, binding_name(e), d, binding_info(e));
-        std::cout << "infer_pi h" << std::endl;
         fvars.push_back(fvar);
-        std::cout << "infer_pi i" << std::endl;
         e = binding_body(e);
-        std::cout << "infer_pi j" << std::endl;
     }
-    std::cout << "infer_pi k" << std::endl;
     e = instantiate_rev(e, fvars.size(), fvars.data());
-    std::cout << "infer_pi l" << std::endl;
     expr s  = ensure_sort_core(infer_type_core(e, infer_only), e);
-    std::cout << "infer_pi m" << std::endl;
     level r = sort_level(s);
-    std::cout << "infer_pi n" << std::endl;
     unsigned i = fvars.size();
-    std::cout << "infer_pi o" << std::endl;
     while (i > 0) {
         --i;
         r = mk_imax(us[i], r);
     }
-    std::cout << "infer_pi p" << std::endl;
-    expr res = mk_sort(r);
-    std::cout << "infer_pi exited" << std::endl;
-    return res;
+    return mk_sort(r);
 }
 
 expr type_checker::infer_app(expr const & e, bool infer_only) {
@@ -312,45 +292,34 @@ expr type_checker::infer_type_core(expr const & e, bool infer_only) {
     if (is_bvar(e))
         throw kernel_exception(env(), "type checker does not support loose bound variables, replace them with free variables before invoking it");
 
-    std::cout << "infer_type_core entered" << std::endl;
     lean_assert(!has_loose_bvars(e));
-    std::cout << "infer_type_core 0" << std::endl;
     check_system("type checker", /* do_check_interrupted */ true);
-    std::cout << "infer_type_core a" << std::endl;
 
-    std::cout << "infer_type_core b" << std::endl;
     auto it = m_st->m_infer_type[infer_only].find(e);
-    std::cout << "infer_type_core c" << std::endl;
-    if (it != m_st->m_infer_type[infer_only].end()) {
-        std::cout << "infer_type_core early exit" << std::endl;
+    if (it != m_st->m_infer_type[infer_only].end())
         return it->second;
-    }
-    std::cout << "infer_type_core d" << std::endl;
 
     expr r;
     switch (e.kind()) {
-        case expr_kind::Lit: std::cout << "Lit" << std::endl;      r = lit_type(lit_value(e)); break;
-    case expr_kind::MData:  std::cout << "MData" << std::endl;  r = infer_type_core(mdata_expr(e), infer_only); break;
-    case expr_kind::Proj:  std::cout << "Proj" << std::endl;   r = infer_proj(e, infer_only); break;
-    case expr_kind::FVar:   std::cout << "FVar" << std::endl;  r = infer_fvar(e);  break;
-    case expr_kind::MVar:   std::cout << "MVar" << std::endl;  throw kernel_exception(env(), "kernel type checker does not support meta variables");
+    case expr_kind::Lit:      r = lit_type(lit_value(e)); break;
+    case expr_kind::MData:    r = infer_type_core(mdata_expr(e), infer_only); break;
+    case expr_kind::Proj:     r = infer_proj(e, infer_only); break;
+    case expr_kind::FVar:     r = infer_fvar(e);  break;
+    case expr_kind::MVar:     throw kernel_exception(env(), "kernel type checker does not support meta variables");
     case expr_kind::BVar:
         lean_unreachable();  // LCOV_EXCL_LINE
     case expr_kind::Sort:
-    std::cout << "Sort" << std::endl;
         if (!infer_only) check_level(sort_level(e));
         r = mk_sort(mk_succ(sort_level(e)));
         break;
-    case expr_kind::Const: std::cout << "Const" << std::endl;   r = infer_constant(e, infer_only);       break;
-    case expr_kind::Lambda:  std::cout << "Lambda" << std::endl; r = infer_lambda(e, infer_only);         break;
-    case expr_kind::Pi:     std::cout << "Pi" << std::endl;  r = infer_pi(e, infer_only);     std::cout << "Pi done" << std::endl;        break;
-    case expr_kind::App:    std::cout << "App" << std::endl;  r = infer_app(e, infer_only);            break;
-    case expr_kind::Let:   std::cout << "Let" << std::endl;   r = infer_let(e, infer_only);            break;
+    case expr_kind::Const:    r = infer_constant(e, infer_only);       break;
+    case expr_kind::Lambda:   r = infer_lambda(e, infer_only);         break;
+    case expr_kind::Pi:       r = infer_pi(e, infer_only);             break;
+    case expr_kind::App:      r = infer_app(e, infer_only);            break;
+    case expr_kind::Let:      r = infer_let(e, infer_only);            break;
     }
 
-    std::cout << "infer_type_core e" << std::endl;
     m_st->m_infer_type[infer_only].insert(mk_pair(e, r));
-    std::cout << "infer_type_core f" << std::endl;
     return r;
 }
 

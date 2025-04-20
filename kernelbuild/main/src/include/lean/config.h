@@ -7,8 +7,7 @@ Author: Leonardo de Moura
 #pragma once
 #include <lean/version.h>
 
-// #define LEAN_MIMALLOC
-// #define LEAN_SMALL_ALLOCATOR 0
+#define LEAN_MIMALLOC
 // @LEAN_SMALL_ALLOCATOR@
 // @LEAN_LAZY_RC@
 //@LEAN_IS_STAGE0@
