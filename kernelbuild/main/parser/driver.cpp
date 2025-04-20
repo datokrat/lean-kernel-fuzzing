@@ -32,14 +32,6 @@ int main(int argc, char* argv[]) {
     lean_object * res;
     // use same default as for Lean executables
     uint8_t builtin = 1;
-    // res = initialize_Lean_Environment(builtin, lean_io_mk_world());
-    // if (lean_io_result_is_ok(res)) {
-    //     lean_dec_ref(res);
-    // } else {
-    //     lean_io_result_show_error(res);
-    //     lean_dec(res);
-    //     return 1;  // do not access Lean declarations if initialization failed
-    // }
     lean_initialize();
     lean_io_mark_end_initialization();
     std::cout << "b " << argv[1] << std::endl;

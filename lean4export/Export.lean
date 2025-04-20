@@ -143,39 +143,37 @@ def dumpHints : ReducibilityHints → String
   | .abbrev => "A"
   | .regular n => s!"R {n}"
 
-instance : Min Name where
-  min n m := if Name.lt m n then m else n
-
-
 partial def dumpConstant (c : Name) : M Unit := do
-  if !(← shouldDump c) then
-    return
   if (← get).visitedConstants.contains c then
     return
-  modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
   match (← read).env.find? c |>.get! with
   | .axiomInfo val => do
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     if val.isUnsafe then
       return
     dumpDeps val.type
     IO.println s!"#AX {← dumpName c} {← dumpExpr val.type} {← seq <$> val.levelParams.mapM dumpName}"
   | .defnInfo val => do
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     if val.safety != .safe then
       return
     dumpDeps val.type
     dumpDeps val.value
     IO.println s!"#DEF {← dumpName c} {← dumpExpr val.type} {← dumpExpr val.value} {dumpHints val.hints} {← seq <$> val.levelParams.mapM dumpName}"
   | .thmInfo val => do
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     dumpDeps val.type
     dumpDeps val.value
     IO.println s!"#THM {← dumpName c} {← dumpExpr val.type} {← dumpExpr val.value} {← seq <$> val.levelParams.mapM dumpName}"
   | .opaqueInfo val => do
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     if val.isUnsafe then
       return
     dumpDeps val.type
     dumpDeps val.value
     IO.println s!"#OPAQ {← dumpName c} {← dumpExpr val.type} {← dumpExpr val.value} {← seq <$> val.levelParams.mapM dumpName}"
   | .quotInfo _ =>
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     IO.println s!"#QUOT"
     return
   | .inductInfo val => do
@@ -183,6 +181,9 @@ partial def dumpConstant (c : Name) : M Unit := do
   | .ctorInfo val =>
     if val.isUnsafe then
       return
+    if !((← get).visitedConstants.contains val.induct) then
+      return
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     dumpDeps val.type
     IO.println s!"#CTOR {← dumpName c} {← dumpExpr val.type} {← dumpName val.induct} {val.cidx} {val.numParams} {val.numFields} {← seq <$> val.levelParams.mapM dumpName}"
   | .recInfo _ =>
@@ -195,18 +196,18 @@ where
   dumpInductiveInner (val : InductiveVal) : M Unit := do
     if val.isUnsafe then
       return
+    if (← get).visitedConstants.contains c then
+      return
+    modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     dumpDeps val.type
     for ctor in val.ctors do
       dumpDeps ((← read).env.find? ctor |>.get!.type)
       dumpConstant ctor
+
     let ctorNameIdxs ← val.ctors.mapM (fun ctor => dumpName ctor)
     IO.println s!"#IND {← dumpName c} {← dumpExpr val.type} {val.numCtors} {seq ctorNameIdxs}"
   dumpInductive (val : InductiveVal) : M Unit := do
     if val.isUnsafe then
-      return
-    let some representative := val.all.min? | panic! "Unexpected inductive"
-    if val.name != representative then
-      -- We dump the entire inductive when encountering the representative
       return
     for iname in val.all do
       let some (.inductInfo ival) := (← read).env.find? iname | panic! "Unexpected inductive"

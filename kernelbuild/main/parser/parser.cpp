@@ -524,7 +524,8 @@ void Parser::parse_inductive() {
     for (uint64_t i = 0; i < numConstructors; ++i) {
         auto it = constructors.find(constructorNames[i]);
         if (it == constructors.end()) {
-            dbgf("Referenced constructor that does not exist");
+            std::cout << constructorNames[i] << std::endl;
+            dbgf("Referenced constructor that does not exist\n");
             error = true;
             return;
         } else {
