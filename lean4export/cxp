@@ -1,4 +1,8 @@
 #!/usr/bin/bash
 
-ls Corpus | grep -v "ExtendedPrelude" | sed 's/\.lean$//' | sed 's/^/Corpus./' | while read m; do lake exe lean4export "$m"; done
+set -e
+lake build
+mkdir -p ExportedCorpus
+ls Corpus | grep -v "ExtendedPrelude" | sed 's/\.lean$//' | sed 's/^/Corpus./' | while read m; do lake exe lean4export "$m" > "ExportedCorpus/$m.elean"; done
+ls -al ExportedCorpus
 

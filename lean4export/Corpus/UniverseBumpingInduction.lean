@@ -1,6 +1,6 @@
 prelude
 import Corpus.ExtendedPrelude
 
-inductive X : Type u → Type (u + 1) where
-  | pure : α → X α
-  | bind {α : Type u} {β : Type u} : (α → X β) → X β
+inductive UX : Type u → Type (u + 1) where
+  | pure : α → UX α
+  | bind {α : Type u} {β : Type u} : (α → UX β) → UX β
