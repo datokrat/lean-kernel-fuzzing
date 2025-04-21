@@ -134,11 +134,17 @@ std::vector<std::uint64_t> Parser::parse_u64_amount(std::uint64_t n) {
     return parse_numeric_amount<std::uint64_t>(n);
 }
 
-lean::name Parser::parse_name_idx() {
+lean::name Parser::parse_name_idx(bool allowAnon) {
     auto idx = parse_u64();
     if (error) return lean::name();
+    if (!allowAnon && idx == 0) {
+        dbgf("Must not use anon name here\n");
+        
+        error = true;
+        return lean::name();
+    }
     if (idx >= names.size()) {
-        dbgf("Referenced a name that doesn't exist");
+        dbgf("Referenced a name that doesn't exist\n");
         error = true;
         return lean::name();
     }
@@ -271,7 +277,7 @@ sz::string_view name_int = "#NI"_sz;
 void Parser::parse_name() {
     auto type = parse_string();
     if (error) return;
-    auto parent = parse_name_idx();
+    auto parent = parse_name_idx(true);
     if (error) return;
     if (type == name_string) {
         auto comp = parse_string();
@@ -322,7 +328,7 @@ void Parser::parse_level() {
         lean::level l = lean::mk_imax(lhs, rhs);
         levels.push_back(l);
     } else if (type == universe_parameter) {
-        auto parameter = parse_name_idx();
+        auto parameter = parse_name_idx(false);
         if (error) return;
         lean::level l = lean::mk_univ_param(parameter);
         levels.push_back(l);
@@ -358,7 +364,7 @@ void Parser::parse_expression() {
         lean::expr e = lean::mk_sort(universe);
         exprs.push_back(e);
     } else if (type == expression_constant) {
-        auto name = parse_name_idx();
+        auto name = parse_name_idx(false);
         if (error) return;
         auto universes = parse_level_star();
         if (error) return;
@@ -374,7 +380,7 @@ void Parser::parse_expression() {
     } else if (type == expression_lambda) {
         parse_string(); // ignored, we don't care
         if (error) return;
-        auto binderName = parse_name_idx();
+        auto binderName = parse_name_idx(true);
         if (error) return;
         auto binderType = parse_expr_idx();
         if (error) return;
@@ -385,7 +391,7 @@ void Parser::parse_expression() {
     } else if (type == expression_pi) {
         parse_string(); // ignored, we don't care
         if (error) return;
-        auto binderName = parse_name_idx();
+        auto binderName = parse_name_idx(true);
         if (error) return;
         auto binderType = parse_expr_idx();
         if (error) return;
@@ -394,7 +400,7 @@ void Parser::parse_expression() {
         lean::expr e = lean::mk_pi(binderName, binderType, body);
         exprs.push_back(e);
     } else if (type == expression_let) {
-        auto binderName = parse_name_idx();
+        auto binderName = parse_name_idx(false);
         if (error) return;
         auto binderType = parse_expr_idx();
         if (error) return;
@@ -405,7 +411,7 @@ void Parser::parse_expression() {
         lean::expr e = lean::mk_let(binderName, binderType, boundValue, body);
         exprs.push_back(e);
     } else if (type == expression_projection) {
-        auto typeName = parse_name_idx();
+        auto typeName = parse_name_idx(false);
         if (error) return;
         auto fieldIndex = parse_uint();
         if (error) return;
@@ -438,7 +444,7 @@ void Parser::parse_axiom() {
         error = true;
         return;
     }
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
@@ -450,7 +456,7 @@ void Parser::parse_axiom() {
 }
 
 void Parser::parse_definition() {
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
@@ -466,7 +472,7 @@ void Parser::parse_definition() {
 }
 
 void Parser::parse_theorem() {
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
@@ -480,7 +486,7 @@ void Parser::parse_theorem() {
 }
 
 void Parser::parse_opaque() {
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
@@ -494,7 +500,7 @@ void Parser::parse_opaque() {
 }
 
 void Parser::parse_inductive() {
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
@@ -551,11 +557,11 @@ void Parser::parse_inductive_family() {
 }
 
 void Parser::parse_constructor() {
-    auto name = parse_name_idx();
+    auto name = parse_name_idx(false);
     if (error) return;
     auto type = parse_expr_idx();
     if (error) return;
-    auto parentInductive = parse_name_idx(); // Unused
+    auto parentInductive = parse_name_idx(false); // Unused
     if (error) return;
     auto constructorIndex = parse_u64(); // Unused
     if (error) return;
@@ -567,7 +573,7 @@ void Parser::parse_constructor() {
     if (error) return;
 
     lean::constructor c = lean::pair_ref(name, type);
-    constructors.insert( { name, c });
+    constructors.insert({ name, c });
 }
 
 bool Parser::add_false() {
@@ -576,9 +582,7 @@ bool Parser::add_false() {
     }
     lean::expr possibleProof = exprs.back();
 
-    std::uint64_t falseNameId = names.size();
     lean::name falseName(names[0], lean::string_ref("False"));
-    names.push_back(falseName);
     
     lean::expr falseType = lean::mk_const(falseName);
     

@@ -11,6 +11,7 @@ structure Context where
   goodIndices : Array ModuleIdx
 
 structure State where
+  stringArray : Array String := #[]
   visitedNames : HashMap Name Nat := .insert {} .anonymous 0
   visitedLevels : HashMap Level Nat := .insert {} .zero 0
   visitedExprs : HashMap Expr Nat := {}
@@ -24,6 +25,10 @@ def M.run (env : Environment) (goodIndices : Array ModuleIdx) (act : M α) : IO 
     ReaderT.run (r := { env, goodIndices }) do
       act
 
+def writeStringsToFile (s : String) : M Unit := do
+  let strings := (← get).stringArray
+  IO.FS.writeFile s (String.intercalate "\n" strings.toList)
+
 def blockedNames : NameSet := .ofList [``sorryAx]
 
 def shouldDump (n : Name) : M Bool := do
@@ -36,7 +41,8 @@ def shouldDump (n : Name) : M Bool := do
   return good.contains (env.getModuleIdxFor? n).get!
 
 @[inline]
-def getIdx [Hashable α] [BEq α] (x : α) (getM : State → HashMap α Nat) (setM : State → HashMap α Nat → State) (pref : String) (rec : M String) : M Nat := do
+def getIdx [Hashable α] [BEq α] (x : α) (getM : State → HashMap α Nat) (setM : State → HashMap α Nat → State)
+    (reg : Option (α → M Unit)) (pref : String) (rec : M String) : M Nat := do
   let m ← getM <$> get
   if let some idx := m[x]? then
     return idx
@@ -45,15 +51,18 @@ def getIdx [Hashable α] [BEq α] (x : α) (getM : State → HashMap α Nat) (se
   let idx := m.size
   IO.println s!"{pref} {s}"
   modify fun st => setM st ((getM st).insert x idx)
+  if let some reg := reg then
+    reg x
   return idx
 
-def dumpName (n : Name) : M Nat := getIdx n (·.visitedNames) ({ · with visitedNames := · }) "#NAME" do
+def dumpName (n : Name) : M Nat := getIdx n (·.visitedNames) ({ · with visitedNames := · })
+    (some (fun n => do if let .str _ b := n then modify (fun st => { st with stringArray := st.stringArray.push b }))) "#NAME" do
   match n with
   | .anonymous => unreachable!
   | .str n s => return s!"#NS {← dumpName n} {s}"
   | .num n i => return s!"#NI {← dumpName n} {i}"
 
-def dumpLevel (l : Level) : M Nat := getIdx l (·.visitedLevels) ({ · with visitedLevels := · }) "#LVL" do
+def dumpLevel (l : Level) : M Nat := getIdx l (·.visitedLevels) ({ · with visitedLevels := · }) none "#LVL" do
   match l with
   | .zero | .mvar _ => unreachable!
   | .succ l => return s!"#US {← dumpLevel l}"
@@ -180,8 +189,9 @@ partial def dumpConstant (c : Name) : M Unit := do
     dumpDeps val.type
     dumpDeps val.value
     IO.println s!"#OPAQ {← dumpName c} {← dumpExpr val.type} {← dumpExpr val.value} {← seq <$> val.levelParams.mapM dumpName}"
-  | .quotInfo _ =>
+  | .quotInfo val =>
     modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
+    discard <| dumpName val.name
     IO.println s!"#QUOT"
     return
   | .inductInfo val => do
@@ -194,8 +204,9 @@ partial def dumpConstant (c : Name) : M Unit := do
     modify fun st => { st with visitedConstants := st.visitedConstants.insert c }
     dumpDeps val.type
     IO.println s!"#CTOR {← dumpName c} {← dumpExpr val.type} {← dumpName val.induct} {val.cidx} {val.numParams} {val.numFields} {← seq <$> val.levelParams.mapM dumpName}"
-  | .recInfo _ =>
+  | .recInfo val =>
     -- Don't care
+    discard <| dumpName val.name
     return
 where
   dumpDeps e := do

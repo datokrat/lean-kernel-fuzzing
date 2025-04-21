@@ -49,7 +49,7 @@ cc_library(
 
 cc_binary(
     name = "parser",
-    srcs = ["parser/parser.cpp", "parser/parser.h", "parser/driver.cpp"],
+    srcs = ["parser/parser.cpp", "parser/parser.h", "parser/driver.cpp", "parser/binparser.h", "parser/binparser.cpp"],
     includes = ["."],
     visibility = ["//:__pkg__"],
     deps = [":stringzilla", ":kernel"],

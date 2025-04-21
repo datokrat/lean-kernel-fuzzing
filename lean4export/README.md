@@ -133,7 +133,7 @@ InductiveFamily ::=
   "#INDF"
   (numParams: nat)
   (numInductives: nat)
-  (inductiveNames: nat)
+  (inductiveNames: nidx{numInductives})
   (uparams: nidx*)
 
 Constructor ::= 
@@ -146,4 +146,56 @@ Constructor ::=
   (numFields : nat)
   (uparams: uidx*)
 
+```
+
+Binary export format:
+
+Big endian
+```
+File ::= Item*
+
+Item ::= Name | Universe | Expr | Declaration
+
+Declaration ::= 
+    | Definition 
+    | Theorem 
+    | Inductive 
+    | InductiveFamily
+    | Constructor 
+
+nidx, uidx, eidx, sidx ::= u16
+
+Name ::=
+  | 0x07 0x00 nidx sidx
+  | 0x07 0x01 nidx u16
+
+Universe ::=
+  | 0x00 0x00 uidx -- succ
+  | 0x00 0x01 uidx uidx -- max
+  | 0x00 0x02 uidx uidx -- imax
+  | 0x00 0x03 nidx -- param
+
+Expr ::=
+  | 0x01 0x00 u16 -- variable
+  | 0x01 0x01 uidx -- sort
+  | 0x01 0x02 nidx (n : u8) uidx{n} -- constant
+  | 0x01 0x03 eidx eidx -- app
+  | 0x01 0x04 nidx eidx eidx -- lambda
+  | 0x01 0x05 nidx eidx eidx -- pi
+  | 0x01 0x06 nidx eidx eidx eidx -- let
+  | 0x01 0x07 nidx u16 eidx -- proj
+  | 0x01 0x08 (n : u8) u8{n} -- nat literal
+  | 0x01 0x09 (n : u8) u8{n} -- string literal
+
+Hint ::= 0x00 | 0x01 | 0x02 u32
+
+Definition ::= 0x02 (name : nidx) (type : eidx) (value : eidx) (hint : Hint) (n : u8) (uparams : nidx{n})
+
+Theorem ::= 0x03 (name : nidx) (type : eidx) (value : edidx) (n : u8) (uparams : nidx{n})
+
+Inductive ::= 0x04 (name : nidx) (type : eidx) (numConstructors : u8) (constructorNames : nidx{numConstructors})
+
+InductiveFamily ::= 0x05 (numParams : u8) (numInductives : u8) (inductiveNames : nidx{numInductives}) (n : u8) (uparams : nidx{n})
+
+Constructor ::= 0x06 (name : nidx) (type : eidx)
 ```

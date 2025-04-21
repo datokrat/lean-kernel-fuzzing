@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Markus Himmel
 */
 #include "parser.h"
+#include "binparser.h"
 #include "kernel/environment.h"
 #include "kernel/init_module.h"
 #include "library/elab_environment.h"
@@ -13,6 +14,7 @@ Author: Markus Himmel
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
+#include <filesystem>
 
 extern "C" void lean_initialize_runtime_module();
 extern "C" void lean_initialize();
@@ -28,18 +30,38 @@ __AFL_FUZZ_INIT();
 
 #endif
 
+std::vector<std::string> read_strings() {
+    std::ifstream stream("strings");
+    std::stringstream buffer;
+    buffer << stream.rdbuf();
+    std::vector<std::string> result;
+    std::string s;
+    while (std::getline(buffer, s, '\n')) {
+        result.push_back(s);
+    }
+    return result;
+}
+
+// https://www.coniferproductions.com/posts/2022/10/25/reading-binary-files-cpp/
+std::vector<std::byte> readFileData(const std::string& name) {
+    std::filesystem::path inputFilePath{name};
+    auto length = std::filesystem::file_size(inputFilePath);
+    if (length == 0) {
+        return {};  // empty vector
+    }
+    std::vector<std::byte> buffer(length);
+    std::ifstream inputFile(name, std::ios_base::binary);
+    inputFile.read(reinterpret_cast<char*>(buffer.data()), length);
+    inputFile.close();
+    return buffer;
+}
+
 int main(int argc, char* argv[]) {
-    // if (argc < 2) {
-    //     std::cout << "Missing file name" << std::endl;
-    //     return 0;
-    // }
-    
     lean_initialize_runtime_module();
-    lean_object * res;
-    // use same default as for Lean executables
-    uint8_t builtin = 1;
     lean_initialize();
     lean_io_mark_end_initialization();
+
+    std::vector<std::string> strings = read_strings();
     
     std::ifstream stream("prelude.elean");
     std::stringstream buffer;
@@ -75,12 +97,8 @@ int main(int argc, char* argv[]) {
 
         sz::string_view data = { (const char *)buf, len };
         
-        Parser p2(false);
-        p2.handle_file(data);
-
-        if (p2.is_error()) {
-            continue;
-        }
+        Parser p2(strings);
+        p2.handle_data((const uint8_t *)buf, len);
         
         lean::elab_environment loop_env(elab_env);
 
@@ -96,31 +114,50 @@ int main(int argc, char* argv[]) {
         }
         
         if (added_false && !kernel_error) {
+            std::cout << "Have a proof of false?!" << std::endl;
             abort();
         }
 
     }
 #else
+ 
+    bool binary = true;
 
-    std::ifstream stream2(argv[1]);
-    std::stringstream buffer2;
-    buffer2 << stream2.rdbuf();
+    if (binary) {
+        std::vector<std::byte> data = readFileData(argv[1]);
     
-    Parser p2(false);
-    p2.handle_file(buffer2.str());
-
-    if (p2.is_error()) {
-        std::cout << "Parse error" << std::endl;
-        return 1;
-    }
+        BinParser p2(strings);
+        p2.handle_data((const uint8_t *)data.data(), data.size());
     
-    std::cout << "Finished parsing." << std::endl;
+        std::cout << "Finished parsing." << std::endl;
+        
+        lean::elab_environment loop_env(elab_env);
     
-    lean::elab_environment loop_env(elab_env);
-
-    p2.add_false();
-    for (const lean::declaration & d : p2.get_decls()) {
-        loop_env = loop_env.add(d);
+        // p2.add_false();
+        for (const lean::declaration & d : p2.get_decls()) {
+            loop_env = loop_env.add(d);
+        }
+    } else {
+        std::ifstream stream2(argv[1]);
+        std::stringstream buffer2;
+        buffer2 << stream2.rdbuf();
+        
+        Parser p2(false);
+        p2.handle_file(buffer2.str());
+    
+        if (p2.is_error()) {
+            std::cout << "Parse error" << std::endl;
+            return 1;
+        }
+        
+        std::cout << "Finished parsing." << std::endl;
+        
+        lean::elab_environment loop_env(elab_env);
+    
+        // p2.add_false();
+        for (const lean::declaration & d : p2.get_decls()) {
+            loop_env = loop_env.add(d);
+        }
     }
 
 #endif

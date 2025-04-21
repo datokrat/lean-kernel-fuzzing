@@ -14,17 +14,6 @@ Author: Markus Himmel
 
 namespace sz = ashvardanian::stringzilla;
 
-struct InductiveFamilyData {
-    lean::names universeParameters;
-    lean::nat numParams;
-};
-
-struct PreInductive {
-    lean::name name;
-    lean::expr type;
-    std::vector<lean::name> constructorNames;
-};
-
 class Parser {
 public:
     Parser(bool preludeMode);
@@ -56,7 +45,7 @@ private:
     lean::reducibility_hints parse_hint();
 
     /* Parsing of lean-specific objects */
-    lean::name parse_name_idx();
+    lean::name parse_name_idx(bool allowAnon);
     lean::level parse_level_idx();
     lean::expr parse_expr_idx();
     template<typename T> std::vector<T> parse_obj_star(const std::vector<T> & objs);
