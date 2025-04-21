@@ -1,0 +1,18 @@
+markus-0.0.5
+#EXPR #EC 0
+#NAME #NS 0 Nat
+#NAME #NS 1 pow
+#EXPR #EC 2
+#NAME #NS 0 OfNat
+#NAME #NS 3 ofNat
+#EXPR #EC 4 0
+#EXPR #ELN 0
+#EXPR #EA 1 0
+#EXPR #EA 4 3
+#EXPR #EA 4 5
+#EXPR #EA 2 6
+#EXPR #EA 7 3
+#EXPR #EA 8 3
+#NAME #NS 0 a
+#EXPR #EC 5
+#THM 5 9 10
