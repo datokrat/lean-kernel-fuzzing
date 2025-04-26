@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 set -e
-lake exe lean4export Init.Prelude Init.Core > prelude.elean
+lake exe lean4export Init.Prelude Init.Coe Init.Notation Init.Tactics Init.SizeOf Init.Core > prelude.elean
 lake build Corpus
 mkdir -p ExportedCorpus
 rm -r ExportedCorpus

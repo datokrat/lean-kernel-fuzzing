@@ -43,13 +43,14 @@ sz::string_view Parser::parse_string() {
     }
 }
 
-char Parser::convert_hexchar(sz::string_view val) {
-    char result;
+uint8_t Parser::convert_hexchar(sz::string_view val) {
+    uint8_t result;
     auto [ptr, err] = std::from_chars(val.data(), val.data() + val.length(), result, 16);
     if (err == std::errc() && ptr == val.data() + val.length()) {
         return result;
     } else {
         dbgf("Not a valid hex char\n");
+        std::cout << val << std::endl;
         error = true;
         return -1;
     }
@@ -63,9 +64,10 @@ sz::string Parser::parse_hexstring() {
         if (error) {
             return result;
         }
-        result.push_back(chr);
+        result.push_back((char)chr);
         val = try_parse_string();
     }
+    std::cout << "Parsed string '" << result << "'" << std::endl;
     return result;
 }
 

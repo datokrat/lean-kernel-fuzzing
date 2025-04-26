@@ -17,6 +17,8 @@ def extraNames : List Name := [`foo, `foo1, `foo2, `foo3, `foo4, `foo5, `foo6, `
   `NestedInduction, `motive_1, `rec_1, `motive_2, `ibelow_1, `below_1, `F_2, `binductionOn_1,
   `brecOn_1, `UniverseBumpingInduction, `α_eq, `β_eq, `Inductive, `FunctionalInduction]
 
+def binaryMode : Bool := true
+
 /-
 Example usage: lake exe lean4export Corpus.ExtendedPrelude
 -/
@@ -38,10 +40,19 @@ def main (args : List String) : IO Unit := do
       discard <| extraNames.mapM dumpName
       writeStringsToFile "strings"
   else
-    let names ← readStringsFromFile "strings"
-    Binary.M.run env goodIndices names do
-      for c in constants do
-        let _ ← Binary.dumpConstant c
-      let filename := s!"ExportedCorpus/{imports[0]!}.belean"
-      IO.println s!"Writing {filename}"
-      Binary.writeBinaryData filename
+    if binaryMode then
+      let names ← readStringsFromFile "strings"
+      Binary.M.run env goodIndices names do
+        for c in constants do
+          let _ ← Binary.dumpConstant c
+        let filename := s!"ExportedCorpus/{imports[0]!}.belean"
+        IO.println s!"Writing {filename}"
+        Binary.writeBinaryData filename
+    else
+      M.run env goodIndices do
+        IO.println semver
+        for c in constants do
+          let _ ← dumpConstant c
+      -- let filename := s!"ExportedCorpus/{imports[0]!}.belean"
+      -- IO.println s!"Writing {filename}"
+      -- Binary.writeBinaryData filename

@@ -21,7 +21,7 @@ std::uint8_t BinParser::parse_u8() {
         --remaining_len;
         return result;
     } else {
-        std::cout << "Read over the end" << std::endl;
+        dbgf("Read over the end");
         return 0;
     }
 }
@@ -40,15 +40,17 @@ std::uint32_t BinParser::parse_u32() {
 
 std::string BinParser::parse_string() {
     std::uint16_t idx = parse_u16();
+    if (idx > strings.size()) {
+        dbgf("bad string index\n");
+    }
     std::string ans = strings[idx % strings.size()];
-    // std::cout << idx << " -> " << ans << std::endl;
     return ans;
 }
 
 lean::level BinParser::parse_level_idx() {
     std::uint16_t idx = parse_u16();
     if (idx >= levels.size()) {
-        std::cout << "bad level index" << std::endl;
+        dbgf("bad level index\n");
     }
     return levels[idx % levels.size()];
 }
@@ -56,10 +58,11 @@ lean::level BinParser::parse_level_idx() {
 lean::name BinParser::parse_name_idx(bool allowAnon) {
     std::uint16_t pidx = parse_u16();
     if (pidx >= names.size()) {
-        std::cout << "bad name index" << std::endl;
+        dbgf("bad name index\n");
     }
     std::uint64_t idx = pidx % names.size();
     if (idx == 0 && !allowAnon) {
+        dbgf("bad anonymous name");
         lean::name n(lean::name::anonymous(), lean::string_ref("foo42"));
         return n;
     }
@@ -135,9 +138,9 @@ lean::constructor BinParser::any_constructor() {
 }
 
 lean::expr BinParser::parse_expr_idx() {
-    std::uint8_t idx = parse_u16();
+    std::uint16_t idx = parse_u16();
     if (idx >= exprs.size()) {
-        std::cout << "bad expr index" << std::endl;
+        dbgf("bad expr index");
     } 
     if (exprs.size() > 0) {
         return exprs[idx % exprs.size()];
@@ -151,7 +154,6 @@ template<typename T>
 std::vector<T> BinParser::parse_objs(const std::vector<T> & objs) {
     std::vector<T> result;
     std::uint16_t amt = parse_u8();
-    // std::cout << "Amount is " << amt << std::endl;
     for (std::uint16_t i = 0; i < amt; ++i) {
         std::uint16_t num = parse_u16();
         result.push_back(objs[num % objs.size()]);
@@ -170,14 +172,13 @@ lean::names BinParser::parse_names() {
 }
 
 void BinParser::parse_name() {
-    // dbgf("Name\n");
+    dbgf("Name\n");
     std::uint8_t nameType = parse_u8();
     switch (nameType % 2) {
         case 0: {
             lean::name parent = parse_name_idx(true);
             std::string comp = parse_string();
             lean::name n(parent, lean::string_ref(comp));
-            // std::cout << n << std::endl;
             names.push_back(n);
             break;
         }
@@ -228,7 +229,7 @@ void BinParser::parse_expression() {
     std::uint8_t expressionType = parse_u8();
     switch (expressionType % 10) {
         case 0: { // Bound variable
-            std::uint16_t deBruijnIndex = parse_u16();
+            std::uint64_t deBruijnIndex = parse_u16();
             dbgf("Bound variable %d\n", deBruijnIndex);
             lean::expr e = lean::mk_bvar(lean::nat(deBruijnIndex));
             exprs.push_back(e);
@@ -244,7 +245,6 @@ void BinParser::parse_expression() {
         case 2: { // Constant
             // dbgf("Constant\n");
             lean::name name = parse_name_idx(false);
-            // std::cout << name << std::endl;
             lean::levels levels = parse_levels();
             lean::expr e = lean::mk_const(name, levels);
             exprs.push_back(e);
@@ -346,7 +346,7 @@ void BinParser::parse_inductive() {
     for (uint64_t i = 0; i < constructorNames.size(); ++i) {
         auto it = constructors.find(constructorNames[i]);
         if (it == constructors.end()) {
-            std::cout << "Bad inductive" << std::endl;
+            dbgf("bad inductive\n");
             constructorsVec.push_back(any_constructor());
         } else {
             constructorsVec.push_back(it->second);
@@ -354,8 +354,6 @@ void BinParser::parse_inductive() {
     }
     
     lean::constructors constructorsList = lean::list_ref<lean::constructor>(constructorsVec.begin(), constructorsVec.end());
-    
-    std::cout << "Inductive is called " << name << std::endl;
     
     lean::inductive_type ind = lean::inductive_type(name, type, constructorsList);
     inductives.insert({ name, ind });
@@ -369,12 +367,10 @@ void BinParser::parse_inductive_family() {
     
     std::vector<lean::inductive_type> inductivesVec;
     
-    // std::cout << "Inductive family with " << inductiveNames.size() << " members" << std::endl;
-
     for (uint64_t i = 0; i < inductiveNames.size(); ++i) {
         auto it = inductives.find(inductiveNames[i]);
         if (it == inductives.end()) {
-            std::cout << "Bad inductive family" << std::endl;
+            dbgf("Bad inductive family\n");
             inductivesVec.push_back(any_inductive());
         } else {
             inductivesVec.push_back(it->second);

@@ -31,7 +31,7 @@ private:
     /* Basic parsing functions */
     sz::string_view try_parse_string();
     sz::string_view parse_string();
-    char convert_hexchar(sz::string_view val);
+    uint8_t convert_hexchar(sz::string_view val);
     sz::string parse_hexstring();
     template<typename T> T convert_numeric(sz::string_view val);
     template<typename T> T parse_numeric();

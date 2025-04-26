@@ -34,8 +34,6 @@ def blockedNames : NameSet := .ofList [``sorryAx]
 def shouldDump (n : Name) : M Bool := do
   if blockedNames.contains n then
     return false
-  if n.toString.startsWith "Lean" then
-    return false
   let env := (← read).env
   let good := (← read).goodIndices
   return good.contains (env.getModuleIdxFor? n).get!

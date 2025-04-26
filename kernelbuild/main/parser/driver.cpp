@@ -7,6 +7,7 @@ Author: Markus Himmel
 #include "parser.h"
 #include "binparser.h"
 #include "kernel/environment.h"
+#include "kernel/kernel_exception.h"
 #include "kernel/init_module.h"
 #include "library/elab_environment.h"
 
@@ -80,8 +81,12 @@ int main(int argc, char* argv[]) {
 
     lean::elab_environment elab_env(eenv, true);
     
-    for (const lean::declaration & d : p.get_decls()) {
-        elab_env = elab_env.add(d);
+    try {
+        for (const lean::declaration & d : p.get_decls()) {
+          elab_env = elab_env.add(d);
+        }
+    } catch (const lean::unknown_constant_exception &ex) {
+        std::cout << "Unkown constant: " << ex.get_name() << std::endl;
     }
     
 #ifdef __AFL_FUZZ_TESTCASE_LEN
@@ -132,7 +137,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Finished parsing." << std::endl;
         
         lean::elab_environment loop_env(elab_env);
-    
+        
         // p2.add_false();
         for (const lean::declaration & d : p2.get_decls()) {
             loop_env = loop_env.add(d);
@@ -158,6 +163,8 @@ int main(int argc, char* argv[]) {
         for (const lean::declaration & d : p2.get_decls()) {
             loop_env = loop_env.add(d);
         }
+        
+        std::cout << "Finished adding to env" << std::endl;
     }
 
 #endif
