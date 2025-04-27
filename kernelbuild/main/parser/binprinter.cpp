@@ -501,6 +501,10 @@ void BinPrinter::handle_data(const std::uint8_t *buf, std::uint64_t len) {
     while (remaining_len > 0) {
         parse_line();
     }
+    
+    for (int i = 0; i < numDecls; ++i) {
+        std::cout << "run_meta Lean.addDecl decl_" << i << std::endl;
+    }
 }
 
 std::vector<std::string> read_strings() {
@@ -542,6 +546,8 @@ BinPrinter::BinPrinter(const std::vector<std::string> & _strings) :
         constructors(),
         inductives() {
     names.push_back({ ".anonymous", lean::name::anonymous() });
+    std::cout << "import Lean" << std::endl;
+    std::cout << "def decodeNatLit (l : List Nat) : Nat := l.foldl (init := 0) (fun sofar d => 256 * sofar + d)" << std::endl;
     std::cout << "def name_0 : Lean.Name := .anonymous" << std::endl;
     std::cout << "def level_0 : Lean.Level := .zero" << std::endl;
 }
