@@ -100,9 +100,7 @@ int main(int argc, char* argv[]) {
     while (__AFL_LOOP(10000)) {
         unsigned long len = __AFL_FUZZ_TESTCASE_LEN;
 
-        sz::string_view data = { (const char *)buf, len };
-        
-        Parser p2(strings);
+        BinParser p2(strings);
         p2.handle_data((const uint8_t *)buf, len);
         
         lean::elab_environment loop_env(elab_env);
