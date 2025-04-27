@@ -21,7 +21,7 @@ std::uint8_t BinParser::parse_u8() {
         --remaining_len;
         return result;
     } else {
-        dbgf("Read over the end");
+        dbgf("Read over the end\n");
         return 0;
     }
 }
@@ -140,7 +140,7 @@ lean::constructor BinParser::any_constructor() {
 lean::expr BinParser::parse_expr_idx() {
     std::uint16_t idx = parse_u16();
     if (idx >= exprs.size()) {
-        dbgf("bad expr index");
+        dbgf("bad expr index\n");
     } 
     if (exprs.size() > 0) {
         return exprs[idx % exprs.size()];
@@ -364,6 +364,8 @@ void BinParser::parse_inductive_family() {
     std::uint16_t numParams = parse_u8();
     std::vector<lean::name> inductiveNames = parse_objs<lean::name>(names);
     lean::names universeParameters = parse_names();
+    std::cout << "Inductive family: " << numParams << " params, " << inductiveNames.size()
+        << " inductives." << std::endl;
     
     std::vector<lean::inductive_type> inductivesVec;
     

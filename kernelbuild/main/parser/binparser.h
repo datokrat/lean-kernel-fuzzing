@@ -15,7 +15,7 @@ class BinParser {
 public:
     BinParser(const std::vector<std::string> & strings);
 
-    void handle_data(const uint8_t *buf, uint64_t len);
+    void handle_data(const std::uint8_t *buf, std::uint64_t len);
 
     const std::vector<lean::declaration> & get_decls() const;
 

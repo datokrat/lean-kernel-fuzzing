@@ -60,3 +60,11 @@ cc_binary(
     srcs = ["main.cpp"],
     deps = [":kernel"],
 )
+
+cc_binary(
+    name = "print",
+    srcs = ["parser/binprinter.h", "parser/binprinter.cpp"],
+    includes = ["."],
+    visibility = ["//:__pkg__"],
+    deps = [":kernel"],
+)

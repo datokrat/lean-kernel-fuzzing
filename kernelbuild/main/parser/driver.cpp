@@ -137,7 +137,11 @@ int main(int argc, char* argv[]) {
         lean::elab_environment loop_env(elab_env);
         
         // p2.add_false();
+        std::cout << "Adding " << p2.get_decls().size() << " declarations." << std::endl;
+        int cur = 0;
         for (const lean::declaration & d : p2.get_decls()) {
+            ++cur;
+            std::cout << "Adding declaration " << cur << "..." << std::endl;
             loop_env = loop_env.add(d);
         }
     } else {

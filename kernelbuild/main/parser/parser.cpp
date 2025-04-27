@@ -67,7 +67,6 @@ sz::string Parser::parse_hexstring() {
         result.push_back((char)chr);
         val = try_parse_string();
     }
-    std::cout << "Parsed string '" << result << "'" << std::endl;
     return result;
 }
 
