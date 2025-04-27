@@ -22,3 +22,5 @@ import Corpus.SuccEqSucc
 import Corpus.UnitLike
 import Corpus.UniverseBumpingInduction
 import Corpus.ZeroEqZero
+import Corpus.ExcludedMiddle
+import Corpus.Funext

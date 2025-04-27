@@ -187,7 +187,9 @@ def getIdx [Hashable α] [BEq α] [ToString α] (x : α) (getM : State → HashM
 
 def getStringIndex (n : String) : M Nat := do
   match (← stringMap)[n]? with
-  | none => panic! s!"Illegal string: {n}"
+  | none => --panic! s!"Illegal string: {n}"
+      IO.println s!"{n}"
+      return 1
   | some i =>
     -- IO.println s!"{n} -> {i}"
     return i
@@ -388,9 +390,6 @@ where
     let numParams := val.numParams
     let indNameIdxs ← val.all.mapM dumpName
     let levelIdxs ← dumpNames val.levelParams
-
-    IO.println s!"{val.all}"
-    IO.println s!"{levelIdxs}"
 
     pushU8 5
     pushN8 numParams

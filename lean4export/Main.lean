@@ -15,7 +15,10 @@ def extraNames : List Name := [`foo, `foo1, `foo2, `foo3, `foo4, `foo5, `foo6, `
   `lit_eq_lit, `lit_eq_mk, `nat_sub₁, `nat_sub₂, `nat_succ_eq_succ, `UnitLike, `ut,
   `UX, `nat_zero_eq_zero, `inductivePredicate, `Corpus, `InductivePredicate,
   `NestedInduction, `motive_1, `rec_1, `motive_2, `ibelow_1, `below_1, `F_2, `binductionOn_1,
-  `brecOn_1, `UniverseBumpingInduction, `α_eq, `β_eq, `Inductive, `FunctionalInduction]
+  `brecOn_1, `UniverseBumpingInduction, `α_eq, `β_eq, `Inductive, `FunctionalInduction,
+  `v_def, `ExcludedMiddle, `u_def, `hvf, `hut, `V, `U, `Classical2, `px, `indefiniteDescription,
+  `choose, `choose_spec, `not_uv_or_p, `hne, `exU, `exV, `p_implies_uv, `hpred, `hl, `hr,
+  `Funext, `funext2]
 
 def binaryMode : Bool := true
 
