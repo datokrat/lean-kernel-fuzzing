@@ -422,7 +422,7 @@ static inline void lean_free_small_object(lean_object * o) {
     lean_free_small(o);
 #elif defined(LEAN_MIMALLOC)
 
-    mi_free_size((void *)o, o->m_cs_sz);
+    mi_free((void *)o);
 #else
     size_t* ptr = (size_t*)o - 1;
     free_sized(ptr, *ptr + sizeof(size_t));
