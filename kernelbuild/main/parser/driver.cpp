@@ -132,17 +132,22 @@ int main(int argc, char* argv[]) {
         BinParser p2(strings);
         p2.handle_data((const uint8_t *)data.data(), data.size());
     
-        std::cout << "Finished parsing." << std::endl;
-        
         lean::elab_environment loop_env(elab_env);
         
-        // p2.add_false();
-        std::cout << "Adding " << p2.get_decls().size() << " declarations." << std::endl;
-        int cur = 0;
-        for (const lean::declaration & d : p2.get_decls()) {
-            ++cur;
-            std::cout << "Adding declaration " << cur << "..." << std::endl;
-            loop_env = loop_env.add(d);
+        bool kernel_error = false;
+        bool added_false = p2.add_false();
+        try {
+            for (const lean::declaration & d : p2.get_decls()) {
+                loop_env = loop_env.add(d);
+            }
+        } catch (...) {
+            // Did not succeed
+            kernel_error = true;
+        }
+        
+        if (added_false && !kernel_error) {
+            std::cout << "Have a proof of false?!" << std::endl;
+            abort();
         }
     } else {
         std::ifstream stream2(argv[1]);

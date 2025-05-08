@@ -222,7 +222,9 @@ expr cheap_beta_reduce(expr const & e) {
     if (!has_loose_bvars(fn)) {
         return mk_app(fn, args.size() - i, args.data() + i);
     } else if (is_bvar(fn)) {
-        lean_assert(bvar_idx(fn) < i);
+	if (!(bvar_idx(fn) < i)) {
+		exit(0);
+	}
         return mk_app(args[i - bvar_idx(fn).get_small_value() - 1], args.size() - i, args.data() + i);
     } else {
         return e;

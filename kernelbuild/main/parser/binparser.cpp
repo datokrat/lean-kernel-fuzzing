@@ -6,7 +6,7 @@ Author: Markus Himmel
 */
 #include "binparser.h"
 
-#define MARKUS_DEBUG
+//#define MARKUS_DEBUG
 
 #ifdef MARKUS_DEBUG
     #define dbgf printf
@@ -364,8 +364,6 @@ void BinParser::parse_inductive_family() {
     std::uint16_t numParams = parse_u8();
     std::vector<lean::name> inductiveNames = parse_objs<lean::name>(names);
     lean::names universeParameters = parse_names();
-    std::cout << "Inductive family: " << numParams << " params, " << inductiveNames.size()
-        << " inductives." << std::endl;
     
     std::vector<lean::inductive_type> inductivesVec;
     
