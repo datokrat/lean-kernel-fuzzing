@@ -2579,7 +2579,7 @@ extern "C" obj_res lean_io_eprintln(obj_arg s, obj_arg w);
 void io_eprintln(obj_arg s) {
     // object * r = lean_io_eprintln(s, lean_io_mk_world());
     // Todo: should we print something here?
-    lean_assert(lean_io_result_is_ok(r));
+    // lean_assert(lean_io_result_is_ok(r));
     // lean_dec(r);
 }
 

@@ -7,6 +7,7 @@ Author: Sofia Rodrigues, Henrik Böving
 #pragma once
 #include <lean/lean.h>
 #include "runtime/uv/event_loop.h"
+#include <uv.h>
 
 namespace lean {
 
@@ -15,7 +16,6 @@ void initialize_libuv_timer();
 
 #ifndef LEAN_EMSCRIPTEN
 using namespace std;
-#include <uv.h>
 
 enum uv_timer_state {
     TIMER_STATE_INITIAL,

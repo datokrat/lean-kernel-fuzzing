@@ -8,6 +8,7 @@ Author: Sofia Rodrigues
 #include <lean/lean.h>
 #include "runtime/io.h"
 #include "runtime/object.h"
+#include <uv.h>
 
 namespace lean {
 
@@ -15,7 +16,6 @@ void initialize_libuv_loop();
 
 #ifndef LEAN_EMSCRIPTEN
 using namespace std;
-#include <uv.h>
 
 // Event loop structure for managing asynchronous events and synchronization across multiple threads.
 typedef struct {

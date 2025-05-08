@@ -8,6 +8,7 @@ Author: Sofia Rodrigues
 #include "runtime/uv/event_loop.h"
 #include "runtime/uv/net_addr.h"
 #include "runtime/object_ref.h"
+#include <uv.h>
 
 namespace lean {
 
@@ -15,7 +16,6 @@ static lean_external_class* g_uv_tcp_socket_external_class = NULL;
 void initialize_libuv_tcp_socket();
 
 #ifndef LEAN_EMSCRIPTEN
-#include <uv.h>
 
 // Structure for managing a single TCP socket object, including promise handling,
 // connection state, and read/write buffers.

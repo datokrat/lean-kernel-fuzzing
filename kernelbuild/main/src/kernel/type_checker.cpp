@@ -292,7 +292,9 @@ expr type_checker::infer_type_core(expr const & e, bool infer_only) {
     if (is_bvar(e))
         throw kernel_exception(env(), "type checker does not support loose bound variables, replace them with free variables before invoking it");
 
-    lean_assert(!has_loose_bvars(e));
+    if (has_loose_bvars(e)) {
+        throw kernel_exception(env(), "type checker does not support loose bound variables, replace them with free variables before invoking it");
+    }
     check_system("type checker", /* do_check_interrupted */ true);
 
     auto it = m_st->m_infer_type[infer_only].find(e);

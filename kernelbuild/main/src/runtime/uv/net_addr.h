@@ -6,11 +6,11 @@ Author: Henrik Böving
 #pragma once
 #include <lean/lean.h>
 #include "runtime/object.h"
+#include <uv.h>
 
 namespace lean {
 
 #ifndef LEAN_EMSCRIPTEN
-#include <uv.h>
 
 typedef union in_addr_storage {
     in_addr ipv4;
