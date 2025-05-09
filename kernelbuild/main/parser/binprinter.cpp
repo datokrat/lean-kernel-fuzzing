@@ -146,7 +146,7 @@ std::string BinPrinter::parse_natlit() {
     std::uint8_t len = parse_u8();
     for (std::uint8_t i = 0; i < len; ++i) {
         std::uint8_t byte = parse_u8();
-        result << byte;
+        result << (std::uint32_t)byte;
         if (i + 1 < len) {
             result << ", ";
         }
@@ -209,7 +209,7 @@ std::string BinPrinter::any_constructors() {
 }
 
 std::string BinPrinter::any_inductive() {
-    return "{ name := " + any_name() + ", type := " + any_expr() + " ctors := " + any_constructors() + " }";
+    return "{ name := " + any_name() + ", type := " + any_expr() + ", ctors := " + any_constructors() + " }";
 }
 
 std::string BinPrinter::any_constructor() {
